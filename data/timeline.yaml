@@ -1,0 +1,42 @@
+timeline:
+  - tick: 10
+    type: "spawn_npc"
+    payload:
+      npc_id: "beggar_scout"
+      location_id: "xiangyang_market"
+
+  - tick: 20
+    type: "rumor_broadcast"
+    payload:
+      location_ids: ["inn_hall", "xiangyang_market"]
+      rumor_key: "rumor_blade_manual"
+
+  - tick: 30
+    type: "spawn_npc"
+    payload:
+      npc_id: "mysterious_swordsman"
+      location_id: "inn_hall"
+      npc_def:
+        name: "神秘剑客"
+        title: "背剑之人"
+        faction: "不明"
+        ai_profile:
+          behavior_state: "scripted"
+          period_tick: 999
+          move_probability: 0.0
+          allowed_location_tags: ["inn", "city", "outskirts"]
+        speech_profile:
+          talk_probability: 0.0
+          template_keys: ["swordsman_line"]
+
+  - tick: 35
+    type: "npc_say"
+    payload:
+      npc_id: "mysterious_swordsman"
+      template_key: "swordsman_line"
+
+  - tick: 40
+    type: "npc_move"
+    payload:
+      npc_id: "mysterious_swordsman"
+      to_location_id: "outskirts_path"

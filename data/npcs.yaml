@@ -1,0 +1,42 @@
+npcs:
+  - id: waiter_xiaoer
+    name: "店小二"
+    title: "客栈伙计"
+    faction: "悦来客栈"
+    home_location_id: inn_hall
+    ai_profile:
+      behavior_state: "inn_service"
+      period_tick: 3
+      move_probability: 0.0
+      allowed_location_tags: ["inn"]
+    speech_profile:
+      talk_probability: 0.2
+      template_keys: ["waiter_greeting", "waiter_idle"]
+
+  - id: wanderer_guest
+    name: "江湖客"
+    title: "行脚之人"
+    faction: "无门无派"
+    home_location_id: inn_hall
+    ai_profile:
+      behavior_state: "wander"
+      period_tick: 5
+      move_probability: 0.6
+      allowed_location_tags: ["inn", "city"]
+    speech_profile:
+      talk_probability: 0.25
+      template_keys: ["guest_mutter", "guest_rumor_hint"]
+
+  - id: beggar_scout
+    name: "丐帮弟子"
+    title: "打探消息"
+    faction: "丐帮"
+    home_location_id: xiangyang_market
+    ai_profile:
+      behavior_state: "scout"
+      period_tick: 7
+      move_probability: 0.5
+      allowed_location_tags: ["city", "outskirts"]
+    speech_profile:
+      talk_probability: 0.35
+      template_keys: ["beggar_rumor", "beggar_warning"]

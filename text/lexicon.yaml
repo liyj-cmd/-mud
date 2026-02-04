@@ -1,0 +1,60 @@
+lexicon:
+  forms_of_address:
+    - "在下"
+    - "阁下"
+    - "兄台"
+    - "大侠"
+    - "客官"
+
+  ambience_words:
+    - "风尘"
+    - "酒香"
+    - "刀光"
+    - "马蹄"
+    - "暗流"
+    - "火星"
+
+  action_verbs:
+    - "拱手"
+    - "抱拳"
+    - "低声"
+    - "冷笑"
+    - "侧目"
+    - "沉吟"
+
+  npc_idle_actions:
+    - "哈腰赔笑，麻利地添了壶热茶。"
+    - "用抹布擦拭桌面，目光却悄悄打量众人。"
+    - "把酒坛轻轻放下，压低嗓子招呼客人。"
+
+  movement_templates:
+    - "{npc}提气疾行，{direction_text}而去。"
+    - "{npc}衣袂一荡，转眼{direction_text}。"
+    - "{npc}不动声色地挪步，{direction_text}消失在人群里。"
+
+  say_templates:
+    waiter_greeting:
+      - "店小二哈腰道：‘{address}里边请，酒菜马上就来。’"
+    waiter_idle:
+      - "店小二笑道：‘{address}若要住店，楼上雅间也有。’"
+    guest_mutter:
+      - "江湖客{verb}道：‘这襄阳城里，{ambience}味儿越来越重了。’"
+    guest_rumor_hint:
+      - "江湖客压低声音：‘听说最近有人在找一份旧物……’"
+    beggar_rumor:
+      - "丐帮弟子嘿然道：‘{address}可曾听过江湖上的新传闻？’"
+    beggar_warning:
+      - "丐帮弟子摇头：‘这路上不太平，{address}多留个心眼。’"
+    swordsman_line:
+      - "神秘剑客淡淡道：‘此间风起，诸位自求多福。’"
+
+  rumor_templates:
+    rumor_blade_manual:
+      - "传闻：{rumor_opener}有人在襄阳一带寻‘残缺刀谱’，动静不小。"
+      - "江湖传闻：{rumor_opener}‘残缺刀谱’再现，诸方人马已暗中集结。"
+
+  rumor_openers:
+    - "听闻"
+    - "据说"
+    - "有人低声说"
+    - "坊间相传"
