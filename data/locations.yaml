@@ -1,0 +1,28 @@
+locations:
+  - id: inn_hall
+    name: "悦来客栈·大堂"
+    desc: |
+      大堂里酒香混着尘土气，几张木桌上刀痕斑驳。角落里有江湖客压低嗓音议论，
+      店小二哈腰穿梭其间，眼神却不时扫过诸人腰间兵刃。
+    ambience_tags: ["inn", "crowded", "rumor"]
+    exits:
+      east: xiangyang_market
+
+  - id: xiangyang_market
+    name: "襄阳城·街市"
+    desc: |
+      街市人声鼎沸，摊贩吆喝不绝。铁匠铺里火星四溅，行人衣袂带风。
+      你隐约觉得，热闹之下有几道目光在暗处追随。
+    ambience_tags: ["city", "busy", "watchful"]
+    exits:
+      west: inn_hall
+      south: outskirts_path
+
+  - id: outskirts_path
+    name: "城外·小道"
+    desc: |
+      小道蜿蜒入野，枯草随风起伏。远处偶有马蹄声碎，近处却静得只闻虫鸣。
+      江湖路远，祸福难料，你不由得握紧了随身之物。
+    ambience_tags: ["outskirts", "quiet", "danger"]
+    exits:
+      north: xiangyang_market
