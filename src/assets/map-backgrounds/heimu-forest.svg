@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#274839" />
+      <stop offset="48%" stop-color="#163225" />
+      <stop offset="100%" stop-color="#0a1912" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" fill="url(#night)" />
+  <circle cx="942" cy="118" r="54" fill="#b8d6c7" fill-opacity="0.24" />
+  <path d="M0 700 V0 C82 88 126 190 130 308 C136 420 94 544 0 700 Z" fill="#0b1b14" />
+  <path d="M1200 700 V0 C1118 96 1068 202 1062 324 C1054 452 1098 570 1200 700 Z" fill="#0b1b14" />
+  <path d="M138 700 L210 180 L254 700 Z M272 700 L342 146 L394 700 Z M430 700 L498 194 L556 700 Z M602 700 L664 132 L728 700 Z M782 700 L838 188 L900 700 Z M940 700 L996 160 L1062 700 Z" fill="#101f18" />
+  <path d="M66 700 L122 270 L172 700 Z M190 700 L246 236 L300 700 Z M338 700 L390 250 L442 700 Z M530 700 L582 228 L632 700 Z M690 700 L742 246 L792 700 Z M860 700 L912 250 L962 700 Z M1030 700 L1084 236 L1136 700 Z" fill="#1b3025" fill-opacity="0.72" />
+  <path d="M0 596 C220 540 410 566 598 610 C744 644 934 664 1200 610 V700 H0 Z" fill="#08110c" fill-opacity="0.78" />
+</svg>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>江湖原型 - 时间轴与NPC自主行动</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header id="top-bar">
+        <div class="status-left" id="player-summary"></div>
+        <div class="status-center" id="time-summary"></div>
+        <div class="status-right">
+          <button id="btn-save" class="ghost-btn">手动存档</button>
+          <button id="btn-new-game" class="ghost-btn">新开一局</button>
+        </div>
+      </header>
+
+      <main id="gameplay">
+        <div id="stage-column">
+          <section id="explore-panel" class="panel">
+            <div class="panel-title">江湖地图</div>
+            <div id="map-wrapper">
+              <button id="btn-worldmap" class="ghost-btn map-corner-btn">小地图总览</button>
+              <svg id="map-lines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+              <div id="map-nodes"></div>
+              <div id="menu-hub">
+                <button id="menu-toggle" class="ghost-btn">江湖册</button>
+                <div id="base-actions" class="menu-actions hidden">
+                  <button class="action-btn" data-action="search">探查周遭</button>
+                  <button class="action-btn" data-action="rest">打坐调息</button>
+                  <button class="action-btn" data-action="open-skills">武学列表</button>
+                  <button class="action-btn" data-action="open-prepare">准备武功</button>
+                  <button class="action-btn" data-action="manual-save">立即存档</button>
+                </div>
+              </div>
+            </div>
+            <div id="map-info"></div>
+          </section>
+
+          <section id="battle-panel" class="panel hidden">
+            <div class="panel-title">战斗画面</div>
+            <div id="battle-status" class="block"></div>
+            <div class="hp-bars" id="battle-hp-bars"></div>
+            <div class="battle-canvas-wrap">
+              <canvas id="battle-canvas" width="860" height="290"></canvas>
+            </div>
+          </section>
+        </div>
+
+        <aside id="side-panel" class="panel">
+          <div class="panel-title">江湖文字</div>
+          <div id="context-actions"></div>
+          <div id="log-list"></div>
+        </aside>
+      </main>
+    </div>
+
+    <div id="sheet-modal" class="modal">
+      <div class="modal-card wide">
+        <div class="sheet-header">
+          <h2 id="sheet-title">武学面板</h2>
+          <button id="sheet-close" class="secondary-btn">关闭</button>
+        </div>
+        <div id="sheet-content"></div>
+      </div>
+    </div>
+
+    <div id="worldmap-modal" class="modal">
+      <div class="modal-card wide">
+        <div class="sheet-header">
+          <h2>分区小地图总览</h2>
+          <button id="worldmap-close" class="secondary-btn">关闭</button>
+        </div>
+        <div id="worldmap-layout">
+          <svg id="worldmap-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+          <div id="worldmap-detail"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="character-modal" class="modal show">
+      <div class="modal-card">
+        <h1>踏入江湖</h1>
+        <p>立名、定心，然后在时间流中行走。</p>
+        <div class="save-actions" id="save-actions"></div>
+        <label>
+          姓名
+          <input id="input-name" maxlength="12" placeholder="请输入侠名" />
+        </label>
+        <div class="alignment-select">
+          <label><input type="radio" name="alignment" value="侠义" checked />侠义</label>
+          <label><input type="radio" name="alignment" value="诡道" />诡道</label>
+        </div>
+        <button id="btn-start" class="primary-btn">入江湖</button>
+      </div>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

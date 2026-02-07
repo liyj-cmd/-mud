@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="dawn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6f8060" />
+      <stop offset="52%" stop-color="#3f4f39" />
+      <stop offset="100%" stop-color="#1d261a" />
+    </linearGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7d6a4b" />
+      <stop offset="100%" stop-color="#3d3020" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" fill="url(#dawn)" />
+  <path d="M0 464 C210 386 392 444 594 410 C766 382 960 428 1200 370 V700 H0 Z" fill="#2f3b2b" />
+  <path d="M0 534 C174 472 338 520 520 486 C692 454 852 510 1200 458 V700 H0 Z" fill="#263121" />
+  <path d="M468 700 C520 596 592 530 690 468 C740 438 774 400 790 350 C820 420 860 478 928 518 C1004 562 1082 610 1130 700 Z" fill="url(#road)" fill-opacity="0.93" />
+  <path d="M50 430 L98 302 L152 430 Z M196 458 L242 328 L294 458 Z M360 434 L410 290 L468 434 Z" fill="#4b5a41" fill-opacity="0.52" />
+  <circle cx="204" cy="132" r="62" fill="#f2d497" fill-opacity="0.22" />
+  <path d="M0 632 C220 590 398 602 570 632 S972 676 1200 616 V700 H0 Z" fill="#11180f" fill-opacity="0.62" />
+</svg>

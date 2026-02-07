@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="caveLight" cx="50%" cy="42%" r="70%">
+      <stop offset="0%" stop-color="#4a4e61" />
+      <stop offset="48%" stop-color="#222838" />
+      <stop offset="100%" stop-color="#0f121a" />
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="700" fill="url(#caveLight)" />
+  <path d="M0 0 H1200 V212 C1114 160 1016 164 930 206 C818 260 718 300 598 290 C474 280 376 214 268 220 C182 226 96 260 0 316 Z" fill="#0a0e14" fill-opacity="0.66" />
+  <path d="M0 700 H1200 V490 C1118 536 1030 542 948 508 C834 460 730 430 610 444 C488 458 378 528 268 536 C176 542 88 520 0 480 Z" fill="#0a0d13" fill-opacity="0.72" />
+  <path d="M188 448 C268 352 352 314 444 300 C524 288 610 304 700 274 C774 250 850 208 918 164 C956 246 1000 300 1066 338 C978 384 900 430 820 470 C734 514 640 538 540 530 C430 520 330 488 188 448 Z" fill="#1b2231" fill-opacity="0.78" />
+  <ellipse cx="592" cy="402" rx="160" ry="70" fill="#a8c9d8" fill-opacity="0.1" />
+  <circle cx="612" cy="404" r="24" fill="#bfddea" fill-opacity="0.22" />
+  <path d="M568 402 L602 376 L640 402 L602 430 Z" fill="#e5f2f8" fill-opacity="0.22" />
+</svg>

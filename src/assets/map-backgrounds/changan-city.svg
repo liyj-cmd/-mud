@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2f4f73" />
+      <stop offset="62%" stop-color="#1c2c42" />
+      <stop offset="100%" stop-color="#101a29" />
+    </linearGradient>
+    <linearGradient id="street" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#56422d" />
+      <stop offset="100%" stop-color="#21170f" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="700" fill="url(#sky)" />
+  <circle cx="990" cy="126" r="56" fill="#f3d58e" fill-opacity="0.3" />
+  <rect x="0" y="478" width="1200" height="222" fill="url(#street)" />
+  <path d="M0 514 L150 460 L290 512 L450 448 L612 512 L772 458 L972 520 L1200 470 L1200 700 L0 700 Z" fill="#2b3340" />
+  <path d="M120 306 H340 V476 H120 Z M420 270 H640 V476 H420 Z M700 328 H860 V476 H700 Z M906 298 H1080 V476 H906 Z" fill="#17212f" />
+  <path d="M170 352 H292 V476 H170 Z M468 308 H590 V476 H468 Z M744 364 H818 V476 H744 Z M948 332 H1038 V476 H948 Z" fill="#1f2b3b" />
+  <rect x="192" y="384" width="24" height="32" fill="#e8b469" fill-opacity="0.32" />
+  <rect x="234" y="384" width="24" height="32" fill="#e8b469" fill-opacity="0.32" />
+  <rect x="500" y="350" width="28" height="38" fill="#e8b469" fill-opacity="0.35" />
+  <rect x="546" y="350" width="28" height="38" fill="#e8b469" fill-opacity="0.35" />
+  <rect x="970" y="372" width="22" height="30" fill="#e8b469" fill-opacity="0.3" />
+  <rect x="1006" y="372" width="22" height="30" fill="#e8b469" fill-opacity="0.3" />
+</svg>
