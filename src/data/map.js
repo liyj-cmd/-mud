@@ -46,6 +46,69 @@ const forestBackdrop = {
   size: "cover"
 };
 
+const templeBackdrop = {
+  image: backdropUrl("shaolin-temple.svg"),
+  overlay: "linear-gradient(180deg, rgba(18, 20, 24, 0.1), rgba(8, 10, 14, 0.34))",
+  position: "center",
+  size: "cover"
+};
+
+const cloudBackdrop = {
+  image: backdropUrl("wudang-cloud.svg"),
+  overlay: "linear-gradient(180deg, rgba(12, 20, 24, 0.08), rgba(7, 11, 14, 0.32))",
+  position: "center",
+  size: "cover"
+};
+
+const summitBackdrop = {
+  image: backdropUrl("taishan-sunrise.svg"),
+  overlay: "linear-gradient(180deg, rgba(20, 17, 12, 0.08), rgba(8, 10, 13, 0.3))",
+  position: "center",
+  size: "cover"
+};
+
+const waterBackdrop = {
+  image: backdropUrl("suzhou-water.svg"),
+  overlay: "linear-gradient(180deg, rgba(8, 16, 25, 0.08), rgba(5, 10, 17, 0.3))",
+  position: "center",
+  size: "cover"
+};
+
+const emeiBackdrop = {
+  image: backdropUrl("emei-golden-summit.svg"),
+  overlay: "linear-gradient(180deg, rgba(16, 14, 22, 0.08), rgba(7, 8, 13, 0.3))",
+  position: "center",
+  size: "cover"
+};
+
+const daliBackdrop = {
+  image: backdropUrl("dali-palace.svg"),
+  overlay: "linear-gradient(180deg, rgba(16, 20, 24, 0.08), rgba(9, 12, 16, 0.3))",
+  position: "center",
+  size: "cover"
+};
+
+const islandBackdrop = {
+  image: backdropUrl("taohua-island.svg"),
+  overlay: "linear-gradient(180deg, rgba(8, 14, 18, 0.08), rgba(6, 11, 13, 0.3))",
+  position: "center",
+  size: "cover"
+};
+
+const cliffBackdrop = {
+  image: backdropUrl("heimu-cliff.svg"),
+  overlay: "linear-gradient(180deg, rgba(16, 10, 12, 0.08), rgba(10, 7, 9, 0.34))",
+  position: "center",
+  size: "cover"
+};
+
+const plateauBackdrop = {
+  image: backdropUrl("kunlun-plateau.svg"),
+  overlay: "linear-gradient(180deg, rgba(16, 19, 26, 0.08), rgba(8, 11, 16, 0.34))",
+  position: "center",
+  size: "cover"
+};
+
 export const mapRegions = [
   {
     id: "changan",
@@ -93,7 +156,7 @@ export const mapRegions = [
     x: 34,
     y: 26,
     description: "钟声晨暮，武学渊薮，戒律森然。",
-    mapBackdrop: mountainBackdrop
+    mapBackdrop: templeBackdrop
   },
   {
     id: "zhongnan",
@@ -125,7 +188,7 @@ export const mapRegions = [
     x: 58,
     y: 24,
     description: "封禅旧址，剑客云集，晨练决斗不断。",
-    mapBackdrop: mountainBackdrop
+    mapBackdrop: summitBackdrop
   },
   {
     id: "wudang",
@@ -133,7 +196,7 @@ export const mapRegions = [
     x: 50,
     y: 68,
     description: "道门玄岳，重内外兼修，以柔克刚。",
-    mapBackdrop: mountainBackdrop
+    mapBackdrop: cloudBackdrop
   },
   {
     id: "xiangyang",
@@ -149,7 +212,7 @@ export const mapRegions = [
     x: 78,
     y: 58,
     description: "水巷绵密，商会势大，情报与财路并举。",
-    mapBackdrop: cityBackdrop
+    mapBackdrop: waterBackdrop
   },
   {
     id: "hangzhou",
@@ -157,7 +220,7 @@ export const mapRegions = [
     x: 88,
     y: 64,
     description: "湖山相映，雅集与暗交易并存。",
-    mapBackdrop: cityBackdrop
+    mapBackdrop: waterBackdrop
   },
   {
     id: "emei",
@@ -165,7 +228,7 @@ export const mapRegions = [
     x: 28,
     y: 74,
     description: "山势陡绝，清修门人护民而行。",
-    mapBackdrop: mountainBackdrop
+    mapBackdrop: emeiBackdrop
   },
   {
     id: "dali",
@@ -173,7 +236,31 @@ export const mapRegions = [
     x: 14,
     y: 84,
     description: "高原古城，王府与民间武林并存。",
-    mapBackdrop: cityBackdrop
+    mapBackdrop: daliBackdrop
+  },
+  {
+    id: "heimuya",
+    name: "黑木崖域",
+    x: 78,
+    y: 24,
+    description: "绝壁险崖，日月教众出没无常。",
+    mapBackdrop: cliffBackdrop
+  },
+  {
+    id: "taohua",
+    name: "桃花岛",
+    x: 92,
+    y: 56,
+    description: "海岛桃林迷阵重重，奇人隐居其间。",
+    mapBackdrop: islandBackdrop
+  },
+  {
+    id: "kunlun",
+    name: "昆仑光明顶",
+    x: 12,
+    y: 70,
+    description: "雪岭高台遥接西域，明教旧坛藏有秘录。",
+    mapBackdrop: plateauBackdrop
   }
 ];
 
@@ -203,7 +290,13 @@ export const regionEdges = [
   ["xiangyang", "suzhou"],
   ["suzhou", "hangzhou"],
   ["wudang", "emei"],
-  ["emei", "dali"]
+  ["emei", "dali"],
+  ["heimu", "heimuya"],
+  ["taishan", "heimuya"],
+  ["hangzhou", "taohua"],
+  ["suzhou", "taohua"],
+  ["dali", "kunlun"],
+  ["emei", "kunlun"]
 ];
 
 export const mapNodes = [
@@ -379,7 +472,8 @@ export const mapNodes = [
     regionId: "huashan",
     grid: { col: 3, row: -2 },
     tags: ["sect", "hall", "mentor"],
-    description: "掌门议事处，弟子出入皆正衣冠。"
+    description: "掌门议事处，弟子出入皆正衣冠。",
+    sceneBackdrop: mountainBackdrop
   },
   {
     id: "training_ground",
@@ -406,7 +500,8 @@ export const mapNodes = [
     regionId: "huashan",
     grid: { col: 4, row: -2 },
     tags: ["sect", "training", "weapon"],
-    description: "石壁刻满旧招式，后学常来临摹。"
+    description: "石壁刻满旧招式，后学常来临摹。",
+    sceneBackdrop: mountainBackdrop
   },
   {
     id: "cliff_hostel",
@@ -453,7 +548,8 @@ export const mapNodes = [
     regionId: "shaolin",
     grid: { col: 6, row: -3 },
     tags: ["sect", "gate", "mentor"],
-    description: "古木掩映，晨钟刚歇，僧众整队进出。"
+    description: "古木掩映，晨钟刚歇，僧众整队进出。",
+    sceneBackdrop: templeBackdrop
   },
   {
     id: "monk_courtyard",
@@ -462,7 +558,8 @@ export const mapNodes = [
     regionId: "shaolin",
     grid: { col: 7, row: -3 },
     tags: ["sect", "training", "mentor"],
-    description: "木人桩列阵，拳风起落不息。"
+    description: "木人桩列阵，拳风起落不息。",
+    sceneBackdrop: templeBackdrop
   },
   {
     id: "sutra_pavilion",
@@ -471,7 +568,8 @@ export const mapNodes = [
     regionId: "shaolin",
     grid: { col: 7, row: -4 },
     tags: ["sect", "intel", "quest"],
-    description: "经卷浩繁，武学典籍与戒律并存。"
+    description: "经卷浩繁，武学典籍与戒律并存。",
+    sceneBackdrop: templeBackdrop
   },
   {
     id: "wooden_lane",
@@ -564,7 +662,8 @@ export const mapNodes = [
     regionId: "heimu",
     grid: { col: 8, row: -1 },
     tags: ["forest", "bandit", "ambush"],
-    description: "风声似哭，夜里最易见寒光。"
+    description: "风声似哭，夜里最易见寒光。",
+    sceneBackdrop: forestBackdrop
   },
   {
     id: "blackwood_outpost",
@@ -582,7 +681,8 @@ export const mapNodes = [
     regionId: "heimu",
     grid: { col: 9, row: -1 },
     tags: ["forest", "bandit", "quest"],
-    description: "寨门铁链高悬，火把终夜不灭。"
+    description: "寨门铁链高悬，火把终夜不灭。",
+    sceneBackdrop: cliffBackdrop
   },
   {
     id: "raven_marsh",
@@ -610,7 +710,8 @@ export const mapNodes = [
     regionId: "taishan",
     grid: { col: 9, row: -3 },
     tags: ["mountain", "duel", "trial"],
-    description: "云海翻涌，高手常在拂晓约斗。"
+    description: "云海翻涌，高手常在拂晓约斗。",
+    sceneBackdrop: summitBackdrop
   },
   {
     id: "sealing_platform",
@@ -638,7 +739,8 @@ export const mapNodes = [
     regionId: "wudang",
     grid: { col: 6, row: 3 },
     tags: ["sect", "gate", "mentor"],
-    description: "石阶百转，门人往来井然有序。"
+    description: "石阶百转，门人往来井然有序。",
+    sceneBackdrop: cloudBackdrop
   },
   {
     id: "zixiao_hall",
@@ -647,7 +749,8 @@ export const mapNodes = [
     regionId: "wudang",
     grid: { col: 7, row: 3 },
     tags: ["sect", "hall", "mentor"],
-    description: "宫观肃穆，晨课钟声回荡山谷。"
+    description: "宫观肃穆，晨课钟声回荡山谷。",
+    sceneBackdrop: cloudBackdrop
   },
   {
     id: "taihe_peak",
@@ -656,7 +759,8 @@ export const mapNodes = [
     regionId: "wudang",
     grid: { col: 7, row: 2 },
     tags: ["sect", "mountain", "training"],
-    description: "云海翻卷，最宜参悟身法与心法。"
+    description: "云海翻卷，最宜参悟身法与心法。",
+    sceneBackdrop: cloudBackdrop
   },
   {
     id: "cloud_stair",
@@ -730,7 +834,8 @@ export const mapNodes = [
     regionId: "suzhou",
     grid: { col: 11, row: 3 },
     tags: ["city", "dock", "smuggle"],
-    description: "夜里橹声不断，货箱进出难辨真伪。"
+    description: "夜里橹声不断，货箱进出难辨真伪。",
+    sceneBackdrop: waterBackdrop
   },
   {
     id: "murong_manor",
@@ -748,7 +853,8 @@ export const mapNodes = [
     regionId: "suzhou",
     grid: { col: 12, row: 2 },
     tags: ["city", "dock", "underworld"],
-    description: "窄渠纵横，暗桨可避过官巡视线。"
+    description: "窄渠纵横，暗桨可避过官巡视线。",
+    sceneBackdrop: waterBackdrop
   },
 
   {
@@ -767,7 +873,8 @@ export const mapNodes = [
     regionId: "hangzhou",
     grid: { col: 13, row: 3 },
     tags: ["city", "rumor", "duel"],
-    description: "游人如织，文士与侠客同席而谈。"
+    description: "游人如织，文士与侠客同席而谈。",
+    sceneBackdrop: waterBackdrop
   },
   {
     id: "leifeng_tower",
@@ -804,7 +911,8 @@ export const mapNodes = [
     regionId: "emei",
     grid: { col: 5, row: 4 },
     tags: ["mountain", "sect", "training"],
-    description: "日照金顶，常有高手静观云海悟招。"
+    description: "日照金顶，常有高手静观云海悟招。",
+    sceneBackdrop: emeiBackdrop
   },
   {
     id: "nunnery_hall",
@@ -813,7 +921,8 @@ export const mapNodes = [
     regionId: "emei",
     grid: { col: 5, row: 5 },
     tags: ["sect", "mentor", "healing"],
-    description: "香烟缭绕，门人多以济世为念。"
+    description: "香烟缭绕，门人多以济世为念。",
+    sceneBackdrop: emeiBackdrop
   },
   {
     id: "monkey_valley",
@@ -841,7 +950,8 @@ export const mapNodes = [
     regionId: "dali",
     grid: { col: 3, row: 5 },
     tags: ["city", "court", "quest"],
-    description: "王府礼仪森严，来客多需引荐。"
+    description: "王府礼仪森严，来客多需引荐。",
+    sceneBackdrop: daliBackdrop
   },
   {
     id: "erhai_pier",
@@ -850,7 +960,8 @@ export const mapNodes = [
     regionId: "dali",
     grid: { col: 2, row: 6 },
     tags: ["city", "dock", "travel"],
-    description: "湖面舟影绵延，渔火夜照长堤。"
+    description: "湖面舟影绵延，渔火夜照长堤。",
+    sceneBackdrop: waterBackdrop
   },
   {
     id: "cangshan_trail",
@@ -860,6 +971,129 @@ export const mapNodes = [
     grid: { col: 3, row: 6 },
     tags: ["mountain", "road", "herbs"],
     description: "高坡险栈之间，奇草异花随季节生灭。"
+  },
+
+  {
+    id: "heimu_cliff",
+    name: "黑木绝崖",
+    type: "秘境",
+    regionId: "heimuya",
+    grid: { col: 10, row: -2 },
+    tags: ["cliff", "cult", "secret"],
+    description: "崖壁风号如泣，铁索桥连向教坛深处。",
+    sceneBackdrop: cliffBackdrop
+  },
+  {
+    id: "riyue_hall",
+    name: "日月总坛",
+    type: "门派",
+    regionId: "heimuya",
+    grid: { col: 11, row: -2 },
+    tags: ["sect", "cult", "hall", "mentor"],
+    description: "旌旗猎猎，坛中弟子来往森严。",
+    sceneBackdrop: cliffBackdrop
+  },
+  {
+    id: "hanging_bridge",
+    name: "悬索危桥",
+    type: "秘境",
+    regionId: "heimuya",
+    grid: { col: 10, row: -3 },
+    tags: ["cliff", "road", "trial"],
+    description: "木板窄桥横跨深壑，一步踏错便是绝境。",
+    sceneBackdrop: cliffBackdrop
+  },
+  {
+    id: "abyss_path",
+    name: "断魂崖道",
+    type: "秘境",
+    regionId: "heimuya",
+    grid: { col: 11, row: -3 },
+    tags: ["cliff", "secret", "trial"],
+    description: "崖道蜿蜒向下，尽头常有高手潜修。",
+    sceneBackdrop: cliffBackdrop
+  },
+
+  {
+    id: "taohua_pier",
+    name: "桃花港",
+    type: "城镇",
+    regionId: "taohua",
+    grid: { col: 14, row: 2 },
+    tags: ["island", "dock", "travel"],
+    description: "海浪拍岸，渔舟穿梭于桃林外海。",
+    sceneBackdrop: waterBackdrop
+  },
+  {
+    id: "taohua_villa",
+    name: "桃花庄",
+    type: "门派",
+    regionId: "taohua",
+    grid: { col: 15, row: 2 },
+    tags: ["island", "sect", "mentor"],
+    description: "庄前落英缤纷，阵法机关暗藏其间。",
+    sceneBackdrop: islandBackdrop
+  },
+  {
+    id: "peach_blossom_woods",
+    name: "落英林",
+    type: "秘境",
+    regionId: "taohua",
+    grid: { col: 15, row: 1 },
+    tags: ["island", "forest", "trial"],
+    description: "桃林迷踪，行差一步便会原地兜转。",
+    sceneBackdrop: islandBackdrop
+  },
+  {
+    id: "trial_reef",
+    name: "试剑礁",
+    type: "秘境",
+    regionId: "taohua",
+    grid: { col: 16, row: 2 },
+    tags: ["island", "duel", "trial"],
+    description: "海潮冲刷礁岩，历代高手曾在此论剑。",
+    sceneBackdrop: islandBackdrop
+  },
+
+  {
+    id: "kunlun_pass",
+    name: "昆仑古驿",
+    type: "野外",
+    regionId: "kunlun",
+    grid: { col: 1, row: 4 },
+    tags: ["mountain", "road", "travel"],
+    description: "雪风扑面，古驿连通西域与中原。",
+    sceneBackdrop: plateauBackdrop
+  },
+  {
+    id: "bright_peak",
+    name: "光明顶",
+    type: "门派",
+    regionId: "kunlun",
+    grid: { col: 0, row: 3 },
+    tags: ["mountain", "sect", "duel"],
+    description: "峭壁绝巅云海翻涌，历代群雄在此争锋。",
+    sceneBackdrop: plateauBackdrop
+  },
+  {
+    id: "mingjiao_altar",
+    name: "明教圣坛",
+    type: "门派",
+    regionId: "kunlun",
+    grid: { col: 1, row: 3 },
+    tags: ["sect", "cult", "mentor"],
+    description: "圣火长明，坛中典籍记载诸多奇功。",
+    sceneBackdrop: plateauBackdrop
+  },
+  {
+    id: "glacier_valley",
+    name: "冰川幽谷",
+    type: "秘境",
+    regionId: "kunlun",
+    grid: { col: 0, row: 4 },
+    tags: ["mountain", "secret", "trial"],
+    description: "寒雾封谷，奇功残卷与异兽同栖。",
+    sceneBackdrop: plateauBackdrop
   }
 ];
 
@@ -972,7 +1206,29 @@ export const mapEdges = [
   ["dali_gate", "dali_palace"],
   ["dali_gate", "erhai_pier"],
   ["dali_palace", "cangshan_trail"],
-  ["erhai_pier", "cangshan_trail"]
+  ["erhai_pier", "cangshan_trail"],
+
+  ["bandit_fort", "heimu_cliff"],
+  ["blackwood_forest", "heimu_cliff"],
+  ["heimu_cliff", "riyue_hall"],
+  ["heimu_cliff", "hanging_bridge"],
+  ["hanging_bridge", "abyss_path"],
+  ["riyue_hall", "abyss_path"],
+  ["hanging_bridge", "jade_peak"],
+
+  ["qiantang_port", "taohua_pier"],
+  ["taohua_pier", "taohua_villa"],
+  ["taohua_villa", "peach_blossom_woods"],
+  ["taohua_villa", "trial_reef"],
+  ["peach_blossom_woods", "trial_reef"],
+
+  ["cangshan_trail", "kunlun_pass"],
+  ["monkey_valley", "kunlun_pass"],
+  ["kunlun_pass", "bright_peak"],
+  ["kunlun_pass", "mingjiao_altar"],
+  ["bright_peak", "mingjiao_altar"],
+  ["bright_peak", "glacier_valley"],
+  ["mingjiao_altar", "glacier_valley"]
 ];
 
 const nodeById = new Map(mapNodes.map((node) => [node.id, node]));

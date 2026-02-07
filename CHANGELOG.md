@@ -30,6 +30,45 @@ All notable changes to this project will be documented in this file.
 - 研习武学（成功）现在会推进 30 分钟游戏时间。
 - UI 视觉主题整体提亮，并增加层次质感（面板、按钮、日志、弹窗、世界地图样式统一升级）。
 - 小地图背景遮罩进一步减弱，分区背景图显示更明显。
+- 武学系统重构为多属性模型：
+  - 武学属性从攻/命/闪/格扩展到攻/命/闪/格/拆/破/暴/速/血/气。
+  - 研习消耗改为按武学品质与当前等级动态计算。
+  - 战斗回合改为“命中 -> 闪躲 -> 拆招/破招 -> 格挡 -> 暴击/伤害”流程，并加入真气消耗对招式威力的影响。
+- 探索场景背景改为“地点优先，区域兜底”：
+  - `mapNodes[*].sceneBackdrop` 可覆盖 `mapRegions[*].mapBackdrop`，支持门派/秘境独立背景。
+- NPC 武学配置改为独立系统：
+  - 不再在 `npcs.js` 内嵌人物武功字段。
+  - 新增 `src/data/npcMartialLoadouts.js`，通过“门派模板 + 标签加成 + 人物覆写”分配武学槽位。
+  - 对话与数据校验统一读取独立武学配置，角色与武功解耦。
+- 人物交互系统扩展为独立层：
+  - 新增 `src/data/npcInteractionProfiles.js` 与 `src/runtime/npcInteractionRuntime.js`，统一管理“请教武学/行窃/切磋”规则。
+  - 新增 `src/systems/battleActorFactory.js`，支持 `battle.npcId`，将“敌人”与“可战斗 NPC”统一到同一战斗入口。
+  - 场景交互面板新增 NPC 操作按钮（交谈/请教/顺手牵羊/切磋）。
+- 新增探索场景试点（`market`）并保留旧地图交互：
+  - 可在顶部按钮切换“场景模式: 开/关”，关闭时完全回退到旧版探索流程。
+  - 场景模式下支持方向键移动、点击 NPC 互动、点击出口切换地点、点击观察点触发 5 分钟耗时。
+  - 进出地点和 NPC 行为耗时继续复用原有时间推进、事件筛选与 NPC 日程系统。
+- 场景模式 UI 美化升级：
+  - 探索画布重绘为分层场景风格（天空/地面/摊位/光晕），NPC 与主角增加阴影、名牌与选中反馈。
+  - 新增场景 HUD（地点标题 + 操作提示），并在场景模式中强化沉浸提示信息。
+  - 场景模式按钮新增激活态样式，右侧交互区增加场景态视觉风格。
+- 集市场景辨识度增强（`market`）：
+  - 探索画布追加“市集特征”元素：街市屋檐、灯笼串、招幌、摊位招牌、货堆、行人剪影与石板街面纹理。
+  - `stall_*` 与 `tea_table` 采用差异化绘制，形成“绸缎/药材/兵器/杂货/茶摊”视觉分区。
+  - 场景说明与 HUD 提示增加市集氛围文案，使玩法提示与美术语义一致。
+- `GameScene` 存档快照增加 `ui.sceneModeEnabled`，旧存档缺失该字段时默认关闭场景模式，保持兼容。
+- 世界数据校验新增 `nodeScenes` 检查：覆盖 `nodeId`、出口连通性、NPC 锚点、POI/障碍越界与数值合法性。
+- 场景化扩展到三个区域试点地点（长安 `market`、开封 `kaifeng_square`、少林 `monk_courtyard`）：
+  - 三个地点均支持方向键移动、点击 NPC 互动、点击观察点耗时、点击出口旅行。
+  - 场景渲染从单点特化升级为“主题驱动”（市井/公廨/禅院），保持数据驱动扩展路径。
+- `GameScene` 场景文案与 HUD 改为读取 `sceneThemes`，不同场景主题可直接通过数据配置切换叙事语气与操作提示。
+- 场景模式容器样式按 `data-scene-theme` 区分，公廨与禅院获得独立色调与 HUD 视觉。
+- 世界数据校验新增：
+  - `nodeScenes[*].themeId` 合法性检查。
+  - 人物建模配置（阵营/角色标签/NPC 覆写）引用合法性检查。
+- 探索画布角色渲染从统一火柴人升级为“人物建模驱动渲染”：
+  - NPC 形象按阵营、身份、标签与个体覆写自动生成。
+  - 主角形象支持按立场（侠义/诡道）差异化配色与徽记。
 
 ### Added
 
@@ -62,3 +101,29 @@ All notable changes to this project will be documented in this file.
   - `src/assets/map-backgrounds/gumu-cavern.svg`
   - `src/assets/map-backgrounds/heimu-forest.svg`
 - 新增本更新日志文件 `CHANGELOG.md`。
+- 新增经典武学与人物扩展内容：
+  - 武学扩充到 24 门（新增太极拳、太极剑、太极神功、独孤九剑、降龙十八掌、九阳神功、乾坤大挪移、凌波微步等）。
+  - 新增经典人物 12 名（含张三丰、独孤求败、郭靖、黄蓉、杨过、小龙女、任我行、东方不败、张无忌等）。
+  - 新增事件 6 条（太极真传、孤峰问剑、桃花迷阵、降龙演武、光明顶试炼、黑木崖暗斗）。
+- 新增物品数据 `src/data/items.js`，为偷窃/交易/任务扩展提供统一物品主数据。
+- 新增地图扩展（参考群侠传常见版图）：
+  - 区域扩展至 19 个：新增 `heimuya`、`taohua`、`kunlun`。
+  - 地点扩展至 83 个：新增黑木崖、桃花岛、昆仑光明顶相关节点与连线。
+- 新增门派/地点背景素材：
+  - `src/assets/map-backgrounds/shaolin-temple.svg`
+  - `src/assets/map-backgrounds/wudang-cloud.svg`
+  - `src/assets/map-backgrounds/taishan-sunrise.svg`
+  - `src/assets/map-backgrounds/suzhou-water.svg`
+  - `src/assets/map-backgrounds/emei-golden-summit.svg`
+  - `src/assets/map-backgrounds/dali-palace.svg`
+  - `src/assets/map-backgrounds/taohua-island.svg`
+  - `src/assets/map-backgrounds/heimu-cliff.svg`
+  - `src/assets/map-backgrounds/kunlun-plateau.svg`
+- 新增节点场景数据与渲染模块：
+  - `src/data/nodeScenes.js`（首个地点场景 `market`）
+  - `src/ui/exploreCanvas.js`（探索场景画布渲染）
+- 新增场景主题模块 `src/data/sceneThemes.js`，统一管理场景主题元数据（名称/氛围文案/HUD 提示）。
+- 新增人物建模模块：
+  - `src/data/characterModelProfiles.js`（人物建模数据配置）
+  - `src/runtime/characterModelRuntime.js`（人物模型解析运行时）
+  - `src/ui/characterModelRenderer.js`（人物模型画布渲染器）

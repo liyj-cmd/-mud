@@ -42,6 +42,24 @@ export const factions = [
     defaultReputation: 0
   },
   {
+    id: "taohua_school",
+    name: "桃花岛门人",
+    description: "重机关阵理与奇门之学，择徒极严。",
+    defaultReputation: 0
+  },
+  {
+    id: "mingjiao",
+    name: "明教",
+    description: "源出西域，尚义护民，同时行事果决。",
+    defaultReputation: 0
+  },
+  {
+    id: "riyue_cult",
+    name: "日月神教",
+    description: "盘踞黑木崖，内部纪律森严，作风凌厉。",
+    defaultReputation: -2
+  },
+  {
     id: "imperial_court",
     name: "朝廷差司",
     description: "重秩序与功劳，厌恶匪患。",

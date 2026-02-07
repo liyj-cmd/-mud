@@ -196,7 +196,7 @@ export const events = [
             text: "双方点到为止。",
             effects: {
               battle: {
-                enemyId: "sect_disciple"
+                npcId: "disciple_qing"
               }
             }
           }
@@ -1001,6 +1001,346 @@ export const events = [
                 }
               }
             }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "wudang_taiji_transmission",
+    title: "太极真传",
+    description: "张三丰缓缓起势，问你可愿舍快求圆，先守后发。",
+    repeatable: false,
+    weight: 140,
+    conditions: {
+      locations: ["zixiao_hall", "taihe_peak"],
+      requiresNpc: "zhang_sanfeng",
+      requiredRelationMin: {
+        zhang_sanfeng: 6
+      },
+      requiredFlagsAbsent: ["taiji_legacy_done"],
+      minHour: 6,
+      maxHour: 13
+    },
+    choices: [
+      {
+        id: "accept",
+        label: "叩首求教",
+        outcomes: [
+          {
+            chance: 0.7,
+            text: "张真人点头传你拳意，叮嘱先养心再伤敌。",
+            effects: {
+              addSkill: "taiji_quan",
+              potential: 24,
+              relationDelta: { zhang_sanfeng: 4 },
+              reputationDelta: { wudang: 8 },
+              setFlags: { taiji_legacy_done: true },
+              timelineNote: "获授武当太极拳真传"
+            }
+          },
+          {
+            chance: 0.3,
+            text: "你悟得剑势流转之理，剑意较拳意更为贴合。",
+            effects: {
+              addSkill: "taiji_jian",
+              potential: 22,
+              relationDelta: { zhang_sanfeng: 3 },
+              reputationDelta: { wudang: 6 },
+              setFlags: { taiji_legacy_done: true },
+              timelineNote: "于武当领悟太极剑理"
+            }
+          }
+        ]
+      },
+      {
+        id: "decline",
+        label: "先去磨基",
+        outcomes: [
+          {
+            chance: 1,
+            text: "张真人含笑不语，只让你再观云一日。",
+            effects: { potential: 10, relationDelta: { zhang_sanfeng: 1 } }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "dugu_reef_trial",
+    title: "孤峰问剑",
+    description: "独孤求败立于礁石，冷声道：想学，先证明你能破我影剑。",
+    repeatable: false,
+    weight: 150,
+    conditions: {
+      locations: ["trial_reef"],
+      requiresNpc: "dugu_qiubai",
+      requiredRelationMin: {
+        dugu_qiubai: 5
+      },
+      requiredFlagsAbsent: ["dugu_trial_done"],
+      minHour: 5,
+      maxHour: 19
+    },
+    choices: [
+      {
+        id: "duel",
+        label: "拔剑应试",
+        outcomes: [
+          {
+            chance: 1,
+            text: "你凝神迎敌，礁上剑影骤起。",
+            effects: {
+              battle: {
+                enemyId: "sword_specter",
+                onVictory: {
+                  addSkill: "dugu_jiujian",
+                  exp: 56,
+                  potential: 46,
+                  relationDelta: { dugu_qiubai: 6 },
+                  reputationDelta: { jianghu_knights: 8 },
+                  setFlags: { dugu_trial_done: true },
+                  timelineNote: "礁上问剑得独孤九剑真意"
+                },
+                onDefeat: {
+                  relationDelta: { dugu_qiubai: -2 },
+                  potential: 8
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "observe",
+        label: "静观剑路",
+        outcomes: [
+          {
+            chance: 1,
+            text: "你未急于出手，先将其换劲节律记在心中。",
+            effects: { potential: 20, relationDelta: { dugu_qiubai: 2 }, statGain: { insight: 1 } }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "taohua_formation_lesson",
+    title: "桃花迷阵",
+    description: "桃林花雨迷眼，阵势暗合奇门八卦。",
+    repeatable: true,
+    weight: 10,
+    conditions: {
+      locations: ["taohua_villa", "peach_blossom_woods"],
+      requiresAnyNpc: ["huang_yaoshi", "zhou_botong"],
+      minHour: 7,
+      maxHour: 20
+    },
+    choices: [
+      {
+        id: "break_array",
+        label: "入阵破局",
+        outcomes: [
+          {
+            chance: 1,
+            text: "阵眼转动，你踏错半步便被守阵人截住。",
+            effects: {
+              battle: {
+                enemyId: "taohua_guardian",
+                onVictory: {
+                  potential: 26,
+                  exp: 28,
+                  reputationDelta: { taohua_school: 5 },
+                  relationDelta: { huang_yaoshi: 2, zhou_botong: 2 }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "learn_step",
+        label: "记步悟理",
+        outcomes: [
+          {
+            chance: 0.35,
+            text: "你循步法往复，竟悟得一门奇异身法。",
+            effects: {
+              addSkill: "lingbo_weibu",
+              potential: 16,
+              relationDelta: { huang_yaoshi: 2 },
+              reputationDelta: { taohua_school: 3 }
+            }
+          },
+          {
+            chance: 0.65,
+            text: "你虽未悟绝艺，却摸清了桃阵的进退门路。",
+            effects: { potential: 14, statGain: { insight: 1 }, relationDelta: { zhou_botong: 1 } }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "xiangyang_dragon_discourse",
+    title: "降龙演武",
+    description: "郭靖在校场示掌，掌风沉雄如雷。",
+    repeatable: false,
+    weight: 125,
+    conditions: {
+      locations: ["xiangyang_wall", "martial_square"],
+      requiresNpc: "guo_jing",
+      requiredRelationMin: {
+        guo_jing: 5
+      },
+      requiredFlagsAbsent: ["xianglong_taught"],
+      minHour: 8,
+      maxHour: 18
+    },
+    choices: [
+      {
+        id: "learn",
+        label: "请教掌法",
+        outcomes: [
+          {
+            chance: 1,
+            text: "郭靖让你先稳马步，再一掌一掌拆解劲路。",
+            effects: {
+              addSkill: "xianglong_shibazhang",
+              potential: 28,
+              exp: 24,
+              relationDelta: { guo_jing: 4, huang_rong: 2 },
+              reputationDelta: { xiangyang_guard: 6 },
+              setFlags: { xianglong_taught: true },
+              timelineNote: "在襄阳校场得郭靖指点降龙掌"
+            }
+          }
+        ]
+      },
+      {
+        id: "patrol",
+        label: "先随军巡防",
+        outcomes: [
+          {
+            chance: 1,
+            text: "你随郭靖巡城一周，见识到守军日常艰辛。",
+            effects: { exp: 18, potential: 14, relationDelta: { guo_jing: 2 }, reputationDelta: { xiangyang_guard: 3 } }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "bright_peak_secret_art",
+    title: "光明圣火试炼",
+    description: "张无忌命护法与你过招：若能守心破势，便可阅挪移秘卷。",
+    repeatable: false,
+    weight: 130,
+    conditions: {
+      locations: ["bright_peak", "mingjiao_altar"],
+      requiresNpc: "zhang_wuji",
+      requiredRelationMin: {
+        zhang_wuji: 4
+      },
+      requiredReputationMin: {
+        mingjiao: 2
+      },
+      requiredFlagsAbsent: ["qiankun_secret_done"],
+      minHour: 9,
+      maxHour: 22
+    },
+    choices: [
+      {
+        id: "trial",
+        label: "接受试炼",
+        outcomes: [
+          {
+            chance: 1,
+            text: "圣火高燃，护法起手便以大挪移借力压来。",
+            effects: {
+              battle: {
+                enemyId: "mingjiao_champion",
+                onVictory: {
+                  addSkill: "qiankun_danuoyi",
+                  exp: 48,
+                  potential: 38,
+                  relationDelta: { zhang_wuji: 4 },
+                  reputationDelta: { mingjiao: 10 },
+                  setFlags: { qiankun_secret_done: true },
+                  timelineNote: "通过光明顶试炼获乾坤大挪移"
+                },
+                onDefeat: {
+                  potential: 10,
+                  relationDelta: { zhang_wuji: -1 }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "meditate",
+        label: "静坐观火",
+        outcomes: [
+          {
+            chance: 1,
+            text: "你未贸然争胜，先以九阳运息稳固根基。",
+            effects: { qi: 20, potential: 16, relationDelta: { zhang_wuji: 1 } }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    id: "heimuya_power_struggle",
+    title: "黑木崖暗斗",
+    description: "崖上权争骤起，任我行与东方不败旧部火并在即。",
+    repeatable: true,
+    weight: 9,
+    conditions: {
+      locations: ["heimu_cliff", "riyue_hall", "abyss_path"],
+      requiresAnyNpc: ["ren_woxing", "dongfang_bubai"],
+      minHour: 18,
+      maxHour: 4
+    },
+    choices: [
+      {
+        id: "join_fight",
+        label: "卷入厮杀",
+        outcomes: [
+          {
+            chance: 1,
+            text: "崖顶火把摇曳，日月长老率众向你逼来。",
+            effects: {
+              battle: {
+                enemyId: "riyue_elder",
+                onVictory: {
+                  exp: 42,
+                  potential: 30,
+                  reputationDelta: { riyue_cult: 6, imperial_court: -2 },
+                  relationDelta: { ren_woxing: 2, dongfang_bubai: 1 }
+                },
+                onDefeat: {
+                  reputationDelta: { riyue_cult: -3 }
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        id: "absorb",
+        label: "趁乱夺功",
+        outcomes: [
+          {
+            chance: 0.28,
+            text: "你逆运真气，竟从散乱掌劲中悟出吞吸法门。",
+            effects: { addSkill: "xixing_dafa", potential: 18, reputationDelta: { riyue_cult: 4 } }
+          },
+          {
+            chance: 0.72,
+            text: "你强行运功险些走火，幸而及时收势。",
+            effects: { hp: -20, qi: -16, potential: 10 }
           }
         ]
       }

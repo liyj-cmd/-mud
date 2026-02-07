@@ -2,6 +2,13 @@ import { getMartialById, computeSkillBonuses, starterSkillIds, martialArts } fro
 import { createInitialReputations } from "../data/factions.js";
 
 const DEFAULT_WORLD_CHAPTER = "序章";
+const QUALITY_TRAINING_BASE = {
+  "凡": 10,
+  "良": 12,
+  "奇": 16,
+  "绝": 20,
+  "神": 26
+};
 
 export function createInitialPlayer({ name, alignment }) {
   const owned = {};
@@ -54,6 +61,7 @@ export function createInitialPlayer({ name, alignment }) {
       owned,
       prepared: { ...starterSkillIds }
     },
+    inventory: {},
     flags: {},
     reputations: createInitialReputations(reputationSeed),
     relationships: {},
@@ -121,6 +129,16 @@ export function ensurePlayerState(player) {
 
   for (const [skillId, level] of Object.entries(player.skills.owned)) {
     player.skills.owned[skillId] = Math.max(1, toNumberOr(level, 1));
+  }
+
+  if (!player.inventory || typeof player.inventory !== "object") {
+    player.inventory = {};
+  }
+  for (const [itemId, amount] of Object.entries(player.inventory)) {
+    player.inventory[itemId] = Math.max(0, Math.round(toNumberOr(amount, 0)));
+    if (player.inventory[itemId] === 0) {
+      delete player.inventory[itemId];
+    }
   }
 
   if (!player.flags || typeof player.flags !== "object") {
@@ -196,6 +214,10 @@ export function computeDerivedStats(player) {
   let hitBonus = 0;
   let dodgeBonus = 0;
   let blockBonus = 0;
+  let parryBonus = 0;
+  let breakBonus = 0;
+  let critBonus = 0;
+  let speedBonus = 0;
   let hpBonus = 0;
   let qiBonus = 0;
 
@@ -205,17 +227,25 @@ export function computeDerivedStats(player) {
     hitBonus += item.bonuses.hit;
     dodgeBonus += item.bonuses.dodge;
     blockBonus += item.bonuses.block;
+    parryBonus += item.bonuses.parry;
+    breakBonus += item.bonuses.break;
+    critBonus += item.bonuses.crit;
+    speedBonus += item.bonuses.speed;
     hpBonus += item.bonuses.hp;
     qiBonus += item.bonuses.qi;
   }
 
   const maxHp = player.baseHp + player.stats.bone * 7 + hpBonus;
   const maxQi = player.baseQi + player.stats.insight * 6 + qiBonus;
-  const attack = 14 + player.stats.bone * 1.8 + attackBonus;
-  const hit = 62 + player.stats.agility * 1.7 + hitBonus;
-  const dodge = 10 + player.stats.agility * 1.5 + dodgeBonus;
-  const block = 8 + player.stats.bone * 0.8 + blockBonus;
-  const speed = 8 + player.stats.agility * 0.9 + (prepared.qinggong ? prepared.qinggong.level : 1);
+  const attack = 14 + player.level * 0.8 + player.stats.bone * 1.8 + attackBonus;
+  const hit = 60 + player.level * 0.5 + player.stats.agility * 1.5 + player.stats.insight * 0.6 + hitBonus;
+  const dodge = 10 + player.stats.agility * 1.6 + dodgeBonus;
+  const block = 9 + player.stats.bone * 0.9 + blockBonus;
+  const parry = 8 + (player.stats.agility + player.stats.insight) * 0.7 + parryBonus;
+  const breakForce = 8 + (player.stats.bone + player.stats.insight) * 0.72 + breakBonus;
+  const crit = 4 + player.stats.agility * 0.35 + player.stats.insight * 0.45 + critBonus;
+  const qinggongLevel = prepared.qinggong ? prepared.qinggong.level : 1;
+  const speed = 10 + player.stats.agility * 0.8 + qinggongLevel * 0.9 + speedBonus;
 
   return {
     maxHp: Math.round(maxHp),
@@ -224,6 +254,9 @@ export function computeDerivedStats(player) {
     hit: Math.round(hit),
     dodge: Math.round(dodge),
     block: Math.round(block),
+    parry: Math.round(parry),
+    break: Math.round(breakForce),
+    crit: Math.round(crit),
     speed: Math.round(speed)
   };
 }
@@ -270,20 +303,28 @@ export function addExperience(player, amount, onLog) {
 }
 
 export function trainSkill(player, skillId) {
-  const cost = 12;
-  if (player.potential < cost) {
-    return { ok: false, reason: "潜能不足" };
-  }
-
   const ownedLevel = player.skills.owned[skillId];
   if (!ownedLevel) {
     return { ok: false, reason: "未习得该武学" };
+  }
+
+  const skill = getMartialById(skillId);
+  const cost = getSkillTrainCost(skill, ownedLevel);
+  if (player.potential < cost) {
+    return { ok: false, reason: `潜能不足（需${cost}）` };
   }
 
   player.potential -= cost;
   player.skills.owned[skillId] = ownedLevel + 1;
   normalizeVitals(player);
   return { ok: true, newLevel: player.skills.owned[skillId], cost };
+}
+
+export function getSkillTrainCost(skill, currentLevel = 1) {
+  const quality = skill && skill.quality ? skill.quality : "凡";
+  const base = QUALITY_TRAINING_BASE[quality] || QUALITY_TRAINING_BASE["奇"];
+  const levelFactor = Math.max(1, Number.isFinite(currentLevel) ? currentLevel : 1);
+  return Math.round(base + levelFactor * 1.4);
 }
 
 function toNumberOr(value, fallback) {

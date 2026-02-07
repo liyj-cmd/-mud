@@ -529,6 +529,294 @@ export const npcs = [
     talks: [
       { when: "default", text: "药救得了伤，也救得了心急。" }
     ]
+  },
+  {
+    id: "zhang_sanfeng",
+    name: "张三丰",
+    role: "武当祖师",
+    factionId: "wudang",
+    home: "zixiao_hall",
+    tags: ["mentor", "sect", "legend"],
+    affinityOnTalk: 1,
+    relationshipSeeds: [
+      { targetId: "elder_song", type: "mentor", affinity: 62 },
+      { targetId: "monk_jueyuan", type: "old_friend", affinity: 28 }
+    ],
+    schedule: [
+      { from: 5, to: 9, location: "taihe_peak", action: "观云悟拳" },
+      { from: 9, to: 13, location: "zixiao_hall", action: "讲解太极" },
+      { from: 13, to: 17, location: "cloud_stair", action: "巡视门人" },
+      { from: 17, to: 22, location: "zixiao_hall", action: "静修论道" },
+      { from: 22, to: 24, location: "taihe_peak", action: "夜观星象" },
+      { from: 0, to: 5, location: "taihe_peak", action: "夜观星象" }
+    ],
+    talks: [
+      { when: "default", text: "太极之道，不争而后能胜。" }
+    ]
+  },
+  {
+    id: "dugu_qiubai",
+    name: "独孤求败",
+    role: "剑道宗师",
+    factionId: "jianghu_knights",
+    home: "trial_reef",
+    tags: ["legend", "duel", "mentor"],
+    affinityOnTalk: 1,
+    relationshipSeeds: [
+      { targetId: "swordswoman_lin", type: "inspire", affinity: 25 },
+      { targetId: "huang_yaoshi", type: "respect", affinity: 20 }
+    ],
+    schedule: [
+      { from: 5, to: 9, location: "trial_reef", action: "迎潮试剑" },
+      { from: 9, to: 13, location: "jade_peak", action: "高崖悟剑" },
+      { from: 13, to: 17, location: "taohua_villa", action: "与名宿论剑" },
+      { from: 17, to: 22, location: "trial_reef", action: "静候来者" },
+      { from: 22, to: 24, location: "peach_blossom_woods", action: "林间听潮" },
+      { from: 0, to: 5, location: "peach_blossom_woods", action: "林间听潮" }
+    ],
+    talks: [
+      { when: "default", text: "剑到无招处，方见本心。" }
+    ]
+  },
+  {
+    id: "guo_jing",
+    name: "郭靖",
+    role: "襄阳守将",
+    factionId: "xiangyang_guard",
+    home: "xiangyang_wall",
+    tags: ["leader", "guard", "mentor"],
+    affinityOnTalk: 1,
+    relationshipSeeds: [
+      { targetId: "huang_rong", type: "spouse", affinity: 68 },
+      { targetId: "tactician_ye", type: "comrade", affinity: 40 }
+    ],
+    schedule: [
+      { from: 5, to: 10, location: "xiangyang_wall", action: "巡视城防" },
+      { from: 10, to: 14, location: "martial_square", action: "操练军阵" },
+      { from: 14, to: 18, location: "north_granary", action: "查验军粮" },
+      { from: 18, to: 22, location: "xiangyang_wall", action: "议防边务" },
+      { from: 22, to: 24, location: "hanchuan_dock", action: "夜查水路" },
+      { from: 0, to: 5, location: "hanchuan_dock", action: "夜查水路" }
+    ],
+    talks: [
+      { when: "default", text: "守城如守心，万不可一日懈怠。" }
+    ]
+  },
+  {
+    id: "huang_rong",
+    name: "黄蓉",
+    role: "襄阳军师",
+    factionId: "taohua_school",
+    home: "xiangyang_wall",
+    tags: ["leader", "intel", "mentor"],
+    affinityOnTalk: 1,
+    relationshipSeeds: [
+      { targetId: "guo_jing", type: "spouse", affinity: 68 },
+      { targetId: "huang_yaoshi", type: "family", affinity: 50 }
+    ],
+    schedule: [
+      { from: 6, to: 10, location: "north_granary", action: "核算军需" },
+      { from: 10, to: 14, location: "xiangyang_wall", action: "布置防线" },
+      { from: 14, to: 18, location: "martial_square", action: "检阅民团" },
+      { from: 18, to: 22, location: "xiangyang_wall", action: "夜议边情" },
+      { from: 22, to: 24, location: "inn", action: "暗访情报" },
+      { from: 0, to: 6, location: "inn", action: "暗访情报" }
+    ],
+    talks: [
+      { when: "default", text: "江湖斗智不斗狠，先看局再出手。" }
+    ]
+  },
+  {
+    id: "yang_guo",
+    name: "杨过",
+    role: "神雕侠",
+    factionId: "jianghu_knights",
+    home: "gumu_court",
+    tags: ["wanderer", "legend", "duel"],
+    affinityOnTalk: 1,
+    relationshipSeeds: [
+      { targetId: "xiaolongnv", type: "bond", affinity: 66 },
+      { targetId: "guo_jing", type: "respect", affinity: 22 }
+    ],
+    schedule: [
+      { from: 5, to: 9, location: "gumu_court", action: "晨练独臂剑法" },
+      { from: 9, to: 13, location: "mountain_path", action: "巡山访旧" },
+      { from: 13, to: 17, location: "trial_reef", action: "海礁练剑" },
+      { from: 17, to: 22, location: "gumu_gate", action: "守护古墓" },
+      { from: 22, to: 24, location: "cold_pool", action: "寒潭调息" },
+      { from: 0, to: 5, location: "cold_pool", action: "寒潭调息" }
+    ],
+    talks: [
+      { when: "default", text: "人若认定一条路，再难也要走到底。" }
+    ]
+  },
+  {
+    id: "xiaolongnv",
+    name: "小龙女",
+    role: "古墓传人",
+    factionId: "gumu",
+    home: "gumu_court",
+    tags: ["mentor", "sect", "legend"],
+    affinityOnTalk: 1,
+    relationshipSeeds: [
+      { targetId: "yang_guo", type: "bond", affinity: 66 },
+      { targetId: "tomb_maiden_mo", type: "mentor", affinity: 38 }
+    ],
+    schedule: [
+      { from: 5, to: 10, location: "gumu_court", action: "清修养气" },
+      { from: 10, to: 14, location: "hidden_cave", action: "参悟玉简" },
+      { from: 14, to: 18, location: "cold_pool", action: "寒潭练体" },
+      { from: 18, to: 22, location: "gumu_gate", action: "守护墓门" },
+      { from: 22, to: 24, location: "gumu_court", action: "静坐调息" },
+      { from: 0, to: 5, location: "gumu_court", action: "静坐调息" }
+    ],
+    talks: [
+      { when: "default", text: "心若无尘，招自无滞。" }
+    ]
+  },
+  {
+    id: "huang_yaoshi",
+    name: "黄药师",
+    role: "东邪",
+    factionId: "taohua_school",
+    home: "taohua_villa",
+    tags: ["mentor", "legend", "sect"],
+    affinityOnTalk: 1,
+    relationshipSeeds: [
+      { targetId: "huang_rong", type: "family", affinity: 54 },
+      { targetId: "dugu_qiubai", type: "respect", affinity: 20 }
+    ],
+    schedule: [
+      { from: 5, to: 9, location: "peach_blossom_woods", action: "巡看迷阵" },
+      { from: 9, to: 13, location: "taohua_villa", action: "调弦授艺" },
+      { from: 13, to: 17, location: "trial_reef", action: "礁石试招" },
+      { from: 17, to: 22, location: "taohua_pier", action: "察看海路" },
+      { from: 22, to: 24, location: "taohua_villa", action: "夜阅典籍" },
+      { from: 0, to: 5, location: "taohua_villa", action: "夜阅典籍" }
+    ],
+    talks: [
+      { when: "default", text: "桃花岛不缺好景，缺的是能看懂的人。" }
+    ]
+  },
+  {
+    id: "zhou_botong",
+    name: "周伯通",
+    role: "老顽童",
+    factionId: "neutral_wulin",
+    home: "peach_blossom_woods",
+    tags: ["mentor", "wanderer", "legend"],
+    affinityOnTalk: 1,
+    relationshipSeeds: [
+      { targetId: "huang_yaoshi", type: "old_rival", affinity: 16 },
+      { targetId: "yang_guo", type: "friend", affinity: 18 }
+    ],
+    schedule: [
+      { from: 5, to: 9, location: "peach_blossom_woods", action: "追蝶戏耍" },
+      { from: 9, to: 13, location: "trial_reef", action: "与浪过招" },
+      { from: 13, to: 17, location: "taohua_pier", action: "逗弄渔童" },
+      { from: 17, to: 22, location: "peach_blossom_woods", action: "倒立练拳" },
+      { from: 22, to: 24, location: "taohua_villa", action: "偷翻棋谱" },
+      { from: 0, to: 5, location: "taohua_villa", action: "偷翻棋谱" }
+    ],
+    talks: [
+      { when: "default", text: "先陪我玩十回合，再谈正经武学。" }
+    ]
+  },
+  {
+    id: "ren_woxing",
+    name: "任我行",
+    role: "日月教主",
+    factionId: "riyue_cult",
+    home: "riyue_hall",
+    tags: ["leader", "cult", "quest"],
+    affinityOnTalk: -1,
+    relationshipSeeds: [
+      { targetId: "dongfang_bubai", type: "rival", affinity: -36 },
+      { targetId: "bandit_fort_luo", type: "manipulate", affinity: 12 }
+    ],
+    schedule: [
+      { from: 5, to: 9, location: "riyue_hall", action: "整肃教众" },
+      { from: 9, to: 13, location: "heimu_cliff", action: "检阅哨线" },
+      { from: 13, to: 17, location: "abyss_path", action: "闭关运功" },
+      { from: 17, to: 21, location: "riyue_hall", action: "召见长老" },
+      { from: 21, to: 24, location: "hanging_bridge", action: "夜巡绝崖" },
+      { from: 0, to: 5, location: "hanging_bridge", action: "夜巡绝崖" }
+    ],
+    talks: [
+      { when: "default", text: "江湖只认强者，其他皆是空谈。" }
+    ]
+  },
+  {
+    id: "dongfang_bubai",
+    name: "东方不败",
+    role: "黑木崖主",
+    factionId: "riyue_cult",
+    home: "abyss_path",
+    tags: ["legend", "cult", "duel"],
+    affinityOnTalk: -1,
+    relationshipSeeds: [
+      { targetId: "ren_woxing", type: "rival", affinity: -34 },
+      { targetId: "dugu_qiubai", type: "admire", affinity: 10 }
+    ],
+    schedule: [
+      { from: 5, to: 9, location: "abyss_path", action: "独坐绣剑" },
+      { from: 9, to: 13, location: "hanging_bridge", action: "检视崖防" },
+      { from: 13, to: 17, location: "riyue_hall", action: "整顿内堂" },
+      { from: 17, to: 22, location: "abyss_path", action: "闭目养神" },
+      { from: 22, to: 24, location: "heimu_cliff", action: "夜观山风" },
+      { from: 0, to: 5, location: "heimu_cliff", action: "夜观山风" }
+    ],
+    talks: [
+      { when: "default", text: "你若出招慢上一息，便已经输了。" }
+    ]
+  },
+  {
+    id: "zhang_wuji",
+    name: "张无忌",
+    role: "明教教主",
+    factionId: "mingjiao",
+    home: "bright_peak",
+    tags: ["leader", "mentor", "quest"],
+    affinityOnTalk: 1,
+    relationshipSeeds: [
+      { targetId: "zhang_sanfeng", type: "junior", affinity: 42 },
+      { targetId: "ren_woxing", type: "wary", affinity: -14 }
+    ],
+    schedule: [
+      { from: 5, to: 9, location: "bright_peak", action: "晨修九阳" },
+      { from: 9, to: 13, location: "mingjiao_altar", action: "议教务" },
+      { from: 13, to: 17, location: "glacier_valley", action: "巡查暗道" },
+      { from: 17, to: 21, location: "bright_peak", action: "接见来客" },
+      { from: 21, to: 24, location: "mingjiao_altar", action: "夜练挪移" },
+      { from: 0, to: 5, location: "mingjiao_altar", action: "夜练挪移" }
+    ],
+    talks: [
+      { when: "default", text: "善恶一念间，武学更在一念间。" }
+    ]
+  },
+  {
+    id: "duan_yu",
+    name: "段誉",
+    role: "大理世子",
+    factionId: "dali_royal",
+    home: "dali_palace",
+    tags: ["court", "mentor", "legend"],
+    affinityOnTalk: 1,
+    relationshipSeeds: [
+      { targetId: "prince_duan", type: "family", affinity: 52 },
+      { targetId: "healer_xue", type: "friendly", affinity: 18 }
+    ],
+    schedule: [
+      { from: 6, to: 10, location: "dali_palace", action: "处理内务" },
+      { from: 10, to: 14, location: "erhai_pier", action: "泛湖散心" },
+      { from: 14, to: 18, location: "cangshan_trail", action: "访僧问经" },
+      { from: 18, to: 22, location: "dali_gate", action: "接待来客" },
+      { from: 22, to: 24, location: "dali_palace", action: "夜读古谱" },
+      { from: 0, to: 6, location: "dali_palace", action: "夜读古谱" }
+    ],
+    talks: [
+      { when: "default", text: "若能不战而和，那才是上上之策。" }
+    ]
   }
 ];
 

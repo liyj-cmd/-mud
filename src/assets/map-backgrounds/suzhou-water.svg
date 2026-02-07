@@ -1,0 +1,21 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#91b6d0" />
+      <stop offset="100%" stop-color="#2f4d62" />
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4f7a98" />
+      <stop offset="100%" stop-color="#1f3a4b" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)" />
+  <rect y="470" width="1600" height="430" fill="url(#water)" />
+  <rect x="160" y="390" width="220" height="140" fill="#5c4a3c" />
+  <rect x="430" y="360" width="240" height="170" fill="#644f3f" />
+  <rect x="730" y="385" width="210" height="145" fill="#5b493d" />
+  <rect x="1010" y="350" width="250" height="180" fill="#695343" />
+  <rect x="1320" y="400" width="190" height="130" fill="#5d4938" />
+  <path d="M0 565C130 580 210 620 360 610C520 598 620 560 760 575C910 591 980 642 1130 628C1310 610 1440 552 1600 564V900H0Z" fill="#2b566e" opacity="0.42" />
+  <path d="M0 680C130 700 250 728 420 710C580 694 690 664 840 675C990 687 1100 722 1270 708C1430 695 1510 664 1600 672V900H0Z" fill="#4f98bf" opacity="0.26" />
+</svg>

@@ -1,19 +1,155 @@
-import { mapRegions, mapNodes, mapEdges, regionEdges, getNodeById, getRegionById } from "../data/map.js";
+import { mapRegions, mapNodes, mapEdges, regionEdges, getNodeById, getRegionById, getAdjacentNodeIds } from "../data/map.js";
+import { nodeScenes } from "../data/nodeScenes.js";
 import { npcs, getNpcById } from "../data/npcs.js";
 import { events } from "../data/events.js";
 import { enemies } from "../data/enemies.js";
 import { getMartialById } from "../data/martialArts.js";
 import { getFactionById } from "../data/factions.js";
+import { npcMartialLoadoutOverrides, getNpcMartialLoadout, martialSlotOrder } from "../data/npcMartialLoadouts.js";
+import { npcInteractionProfiles, getNpcInteractionProfile } from "../data/npcInteractionProfiles.js";
+import { getItemById } from "../data/items.js";
+import { isSceneThemeId } from "../data/sceneThemes.js";
+import {
+  factionCharacterModelProfiles,
+  npcCharacterModelOverrides,
+  roleCharacterModelProfiles,
+  tagCharacterModelProfiles
+} from "../data/characterModelProfiles.js";
 
 export function validateWorldData() {
   const warnings = [];
 
   validateMap(warnings);
+  validateNodeScenes(warnings);
   validateNpc(warnings);
+  validateNpcMartialLoadouts(warnings);
+  validateNpcInteractionProfiles(warnings);
+  validateCharacterModels(warnings);
   validateEvents(warnings);
   validateEnemies(warnings);
 
   return warnings;
+}
+
+function validateNodeScenes(warnings) {
+  if (!Array.isArray(nodeScenes)) {
+    warnings.push("nodeScenes 必须是数组");
+    return;
+  }
+
+  const sceneNodeIds = new Set();
+  for (const scene of nodeScenes) {
+    if (!scene || typeof scene !== "object") {
+      warnings.push("nodeScenes 存在非法项");
+      continue;
+    }
+
+    if (!isNonEmptyString(scene.nodeId)) {
+      warnings.push("nodeScene 缺少 nodeId");
+      continue;
+    }
+    if (sceneNodeIds.has(scene.nodeId)) {
+      warnings.push(`重复 nodeScene：${scene.nodeId}`);
+    }
+    sceneNodeIds.add(scene.nodeId);
+
+    const node = getNodeById(scene.nodeId);
+    if (!node) {
+      warnings.push(`nodeScene 引用未知地点：${scene.nodeId}`);
+      continue;
+    }
+
+    if (scene.themeId !== undefined && !isSceneThemeId(scene.themeId)) {
+      warnings.push(`nodeScene ${scene.nodeId} themeId 非法：${scene.themeId}`);
+    }
+
+    if (!scene.size || !Number.isFinite(scene.size.width) || !Number.isFinite(scene.size.height)) {
+      warnings.push(`nodeScene ${scene.nodeId} 缺少合法 size`);
+      continue;
+    }
+    if (scene.size.width <= 0 || scene.size.height <= 0) {
+      warnings.push(`nodeScene ${scene.nodeId} size 必须为正数`);
+    }
+
+    if (!scene.spawn || !Number.isFinite(scene.spawn.x) || !Number.isFinite(scene.spawn.y)) {
+      warnings.push(`nodeScene ${scene.nodeId} 缺少合法 spawn`);
+    } else if (!inSceneBounds(scene.spawn.x, scene.spawn.y, scene.size)) {
+      warnings.push(`nodeScene ${scene.nodeId} spawn 超出场景范围`);
+    }
+
+    if (!Array.isArray(scene.obstacles)) {
+      warnings.push(`nodeScene ${scene.nodeId} obstacles 必须是数组`);
+    } else {
+      for (const obstacle of scene.obstacles) {
+        if (!isRect(obstacle)) {
+          warnings.push(`nodeScene ${scene.nodeId} 存在非法障碍物`);
+          continue;
+        }
+        if (!inSceneRectBounds(obstacle, scene.size)) {
+          warnings.push(`nodeScene ${scene.nodeId} 障碍物越界：${obstacle.id || "unknown"}`);
+        }
+      }
+    }
+
+    if (!Array.isArray(scene.exits)) {
+      warnings.push(`nodeScene ${scene.nodeId} exits 必须是数组`);
+    } else {
+      for (const exit of scene.exits) {
+        if (!isRect(exit) || !isNonEmptyString(exit.toNodeId)) {
+          warnings.push(`nodeScene ${scene.nodeId} 存在非法出口配置`);
+          continue;
+        }
+        if (!getNodeById(exit.toNodeId)) {
+          warnings.push(`nodeScene ${scene.nodeId} 出口引用未知地点：${exit.toNodeId}`);
+        } else if (!getAdjacentNodeIds(scene.nodeId).includes(exit.toNodeId)) {
+          warnings.push(`nodeScene ${scene.nodeId} 出口未连接到相邻地点：${exit.toNodeId}`);
+        }
+        if (!inSceneRectBounds(exit, scene.size)) {
+          warnings.push(`nodeScene ${scene.nodeId} 出口越界：${exit.id || exit.toNodeId}`);
+        }
+      }
+    }
+
+    if (!scene.npcAnchors || typeof scene.npcAnchors !== "object") {
+      warnings.push(`nodeScene ${scene.nodeId} 缺少 npcAnchors`);
+    } else {
+      for (const [npcId, anchor] of Object.entries(scene.npcAnchors)) {
+        if (!getNpcById(npcId)) {
+          warnings.push(`nodeScene ${scene.nodeId} 锚点引用未知NPC：${npcId}`);
+          continue;
+        }
+        if (!anchor || !Number.isFinite(anchor.x) || !Number.isFinite(anchor.y)) {
+          warnings.push(`nodeScene ${scene.nodeId} NPC 锚点非法：${npcId}`);
+          continue;
+        }
+        if (!inSceneBounds(anchor.x, anchor.y, scene.size)) {
+          warnings.push(`nodeScene ${scene.nodeId} NPC 锚点越界：${npcId}`);
+        }
+      }
+    }
+
+    if (scene.pois !== undefined) {
+      if (!Array.isArray(scene.pois)) {
+        warnings.push(`nodeScene ${scene.nodeId} pois 必须是数组`);
+      } else {
+        for (const poi of scene.pois) {
+          if (!poi || !isNonEmptyString(poi.id) || !Number.isFinite(poi.x) || !Number.isFinite(poi.y)) {
+            warnings.push(`nodeScene ${scene.nodeId} 存在非法 poi`);
+            continue;
+          }
+          if (!inSceneBounds(poi.x, poi.y, scene.size)) {
+            warnings.push(`nodeScene ${scene.nodeId} poi 越界：${poi.id}`);
+          }
+          if (poi.radius !== undefined && (!Number.isFinite(poi.radius) || poi.radius <= 0)) {
+            warnings.push(`nodeScene ${scene.nodeId} poi.radius 非法：${poi.id}`);
+          }
+          if (poi.timeCost !== undefined && (!Number.isFinite(poi.timeCost) || poi.timeCost <= 0)) {
+            warnings.push(`nodeScene ${scene.nodeId} poi.timeCost 非法：${poi.id}`);
+          }
+        }
+      }
+    }
+  }
 }
 
 function validateMap(warnings) {
@@ -79,6 +215,18 @@ function validateMap(warnings) {
 
     if (node.tags && !isStringArray(node.tags)) {
       warnings.push(`地点 ${node.id} 的 tags 必须是字符串数组`);
+    }
+
+    if (node.sceneBackdrop) {
+      if (!isNonEmptyString(node.sceneBackdrop.image)) {
+        warnings.push(`地点 ${node.id} 的 sceneBackdrop.image 缺失`);
+      }
+      if (node.sceneBackdrop.position && !isNonEmptyString(node.sceneBackdrop.position)) {
+        warnings.push(`地点 ${node.id} 的 sceneBackdrop.position 非法`);
+      }
+      if (node.sceneBackdrop.size && !isNonEmptyString(node.sceneBackdrop.size)) {
+        warnings.push(`地点 ${node.id} 的 sceneBackdrop.size 非法`);
+      }
     }
   }
 
@@ -190,6 +338,68 @@ function validateNpc(warnings) {
   }
 }
 
+function validateNpcMartialLoadouts(warnings) {
+  for (const npcId of Object.keys(npcMartialLoadoutOverrides || {})) {
+    if (!getNpcById(npcId)) {
+      warnings.push(`武学配置引用未知 NPC：${npcId}`);
+    }
+  }
+
+  for (const npc of npcs) {
+    const loadout = getNpcMartialLoadout(npc.id);
+    if (!loadout) {
+      continue;
+    }
+
+    for (const slot of martialSlotOrder) {
+      const skillId = loadout.slots[slot];
+      const skill = getMartialById(skillId);
+      if (!skill) {
+        warnings.push(`NPC ${npc.id} 的 ${slot} 槽位武学不存在：${skillId}`);
+        continue;
+      }
+      if (skill.slot !== slot) {
+        warnings.push(`NPC ${npc.id} 的 ${slot} 槽位武学类型不匹配：${skillId}`);
+      }
+    }
+
+    for (const [skillId, level] of Object.entries(loadout.skillLevels || {})) {
+      if (!getMartialById(skillId)) {
+        warnings.push(`NPC ${npc.id} 的武学等级配置引用未知武学：${skillId}`);
+      }
+      if (!Number.isFinite(level) || level <= 0) {
+        warnings.push(`NPC ${npc.id} 的武学等级非法：${skillId}=${level}`);
+      }
+    }
+  }
+}
+
+function validateCharacterModels(warnings) {
+  for (const factionId of Object.keys(factionCharacterModelProfiles || {})) {
+    if (!getFactionById(factionId)) {
+      warnings.push(`人物建模 faction 配置引用未知阵营：${factionId}`);
+    }
+  }
+
+  for (const npcId of Object.keys(npcCharacterModelOverrides || {})) {
+    if (!getNpcById(npcId)) {
+      warnings.push(`人物建模 NPC 覆写引用未知角色：${npcId}`);
+    }
+  }
+
+  const roleProfiles = Array.isArray(roleCharacterModelProfiles) ? roleCharacterModelProfiles : [];
+  for (const entry of roleProfiles) {
+    if (!entry || !isNonEmptyString(entry.keyword) || !entry.profile || typeof entry.profile !== "object") {
+      warnings.push("人物建模 roleCharacterModelProfiles 存在非法项");
+    }
+  }
+
+  const tagProfiles = tagCharacterModelProfiles && typeof tagCharacterModelProfiles === "object" ? tagCharacterModelProfiles : null;
+  if (!tagProfiles) {
+    warnings.push("人物建模 tagCharacterModelProfiles 必须是对象");
+  }
+}
+
 function validateEvents(warnings) {
   if (!Array.isArray(events) || events.length === 0) {
     warnings.push("事件列表为空");
@@ -255,8 +465,17 @@ function validateEvents(warnings) {
 
         const battle = outcome.effects && outcome.effects.battle;
         if (battle) {
-          if (!isNonEmptyString(battle.enemyId) || !enemies[battle.enemyId]) {
+          const hasEnemyId = isNonEmptyString(battle.enemyId);
+          const hasNpcId = isNonEmptyString(battle.npcId);
+
+          if (!hasEnemyId && !hasNpcId) {
+            warnings.push(`事件 ${event.id} 战斗配置缺少 enemyId 或 npcId`);
+          }
+          if (hasEnemyId && !enemies[battle.enemyId]) {
             warnings.push(`事件 ${event.id} 战斗敌人不存在：${battle.enemyId}`);
+          }
+          if (hasNpcId && !getNpcById(battle.npcId)) {
+            warnings.push(`事件 ${event.id} 战斗 NPC 不存在：${battle.npcId}`);
           }
 
           if (battle.onVictory) {
@@ -347,8 +566,48 @@ function validateEnemies(warnings) {
       }
     }
 
+    for (const field of ["maxQi", "parry", "break", "crit"]) {
+      if (enemy[field] !== undefined && (!Number.isFinite(enemy[field]) || enemy[field] <= 0)) {
+        warnings.push(`敌人 ${enemyId} 的 ${field}（若存在）必须是正数`);
+      }
+    }
+
     if (!isStringArray(enemy.moves) || enemy.moves.length === 0) {
       warnings.push(`敌人 ${enemyId} 的 moves 必须是非空字符串数组`);
+    }
+  }
+}
+
+function validateNpcInteractionProfiles(warnings) {
+  for (const npcId of Object.keys(npcInteractionProfiles || {})) {
+    if (!getNpcById(npcId)) {
+      warnings.push(`NPC 交互配置引用未知角色：${npcId}`);
+      continue;
+    }
+
+    const profile = getNpcInteractionProfile(npcId);
+    if (!profile) {
+      continue;
+    }
+
+    for (const teachable of profile.teachableSkills || []) {
+      if (!isNonEmptyString(teachable.skillId) || !getMartialById(teachable.skillId)) {
+        warnings.push(`NPC ${npcId} teachableSkills 引用未知武学：${teachable.skillId}`);
+      }
+    }
+
+    if (profile.steal?.enabled) {
+      for (const loot of profile.steal.loot || []) {
+        if (loot.type === "item" && !getItemById(loot.itemId)) {
+          warnings.push(`NPC ${npcId} 行窃掉落引用未知物品：${loot.itemId}`);
+        }
+      }
+    }
+
+    if (profile.combat?.enabled) {
+      if (!Number.isFinite(profile.combat.tier) || profile.combat.tier <= 0) {
+        warnings.push(`NPC ${npcId} combat.tier 必须是正数`);
+      }
     }
   }
 }
@@ -377,6 +636,27 @@ function validateEffectCore(eventId, effectPack, warnings, suffix = "") {
       }
     }
   }
+}
+
+function isRect(value) {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  if (!Number.isFinite(value.x) || !Number.isFinite(value.y)) {
+    return false;
+  }
+  if (!Number.isFinite(value.width) || !Number.isFinite(value.height)) {
+    return false;
+  }
+  return value.width > 0 && value.height > 0;
+}
+
+function inSceneBounds(x, y, size) {
+  return x >= 0 && y >= 0 && x <= size.width && y <= size.height;
+}
+
+function inSceneRectBounds(rect, size) {
+  return rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= size.width && rect.y + rect.height <= size.height;
 }
 
 function isIdPair(value) {

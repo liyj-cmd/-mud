@@ -12,6 +12,7 @@
         <div class="status-left" id="player-summary"></div>
         <div class="status-center" id="time-summary"></div>
         <div class="status-right">
+          <button id="btn-scene-mode" class="ghost-btn">场景模式: 关</button>
           <button id="btn-save" class="ghost-btn">手动存档</button>
           <button id="btn-new-game" class="ghost-btn">新开一局</button>
         </div>
@@ -22,6 +23,11 @@
           <section id="explore-panel" class="panel">
             <div class="panel-title">江湖地图</div>
             <div id="map-wrapper">
+              <canvas id="explore-canvas" width="960" height="540"></canvas>
+              <div id="scene-hud" class="scene-hud hidden">
+                <div id="scene-hud-title" class="scene-hud-title"></div>
+                <div id="scene-hud-hint" class="scene-hud-hint"></div>
+              </div>
               <button id="btn-worldmap" class="ghost-btn map-corner-btn">小地图总览</button>
               <svg id="map-lines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
               <div id="map-nodes"></div>

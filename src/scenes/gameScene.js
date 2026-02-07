@@ -22,6 +22,7 @@ import {
   normalizeVitals,
   addExperience,
   trainSkill,
+  getSkillTrainCost,
   getExpToNext,
   listPreparedSkills,
   getSkillLevel,
@@ -30,16 +31,28 @@ import {
 import { createEventSystem } from "../systems/events.js";
 import { applyEffectPack as applyPack } from "../systems/effectApplier.js";
 import { createBattle, resolveBattleRound } from "../systems/combat.js";
+import { resolveBattleTarget } from "../systems/battleActorFactory.js";
 import { DEFAULT_TIME, advanceTime, formatGameTime } from "../systems/time.js";
 import { createScheduleSystem } from "../systems/schedule.js";
 import { validateWorldData } from "../systems/worldValidation.js";
 import { createWorldStateService } from "../runtime/worldStateService.js";
 import { createDialogueRuntime } from "../runtime/dialogueRuntime.js";
 import { createQuestRuntime } from "../runtime/questRuntime.js";
+import {
+  getNpcInteractionOptions,
+  attemptLearnFromNpc,
+  attemptStealFromNpc,
+  buildNpcChallengeConfig
+} from "../runtime/npcInteractionRuntime.js";
 import { drawBattleCanvas } from "../ui/battleCanvas.js";
+import { getNodeSceneById, hasNodeScene } from "../data/nodeScenes.js";
+import { drawExploreScene } from "../ui/exploreCanvas.js";
+import { getSceneTheme, normalizeSceneThemeId } from "../data/sceneThemes.js";
 
 const AUTO_SAVE_EVERY_TICKS = 6;
 const MAP_DEFAULT_OVERLAY = "radial-gradient(circle at 50% 35%, rgba(44, 58, 82, 0.08), rgba(8, 12, 18, 0.24) 72%)";
+const SCENE_MOVE_SPEED = 200;
+const SCENE_PLAYER_RADIUS = 12;
 const content = getRuntimeContent();
 const { npcs, events, enemies } = content;
 
@@ -61,7 +74,16 @@ export class GameScene {
       sheetType: null,
       worldmapOpen: false,
       worldmapFocusRegion: null,
-      activeSliceId: content.defaultSliceId || null
+      activeSliceId: content.defaultSliceId || null,
+      sceneModeEnabled: false,
+      scenePlayerPos: null,
+      sceneSelectedNpcId: null,
+      sceneInput: {
+        up: false,
+        down: false,
+        left: false,
+        right: false
+      }
     };
 
     this.worldState = createWorldStateService();
@@ -92,9 +114,16 @@ export class GameScene {
     this.battleTimer = null;
     this.didBind = false;
     this.rafId = null;
+    this.lastFrameTime = 0;
+    this.sceneKeyDownHandler = (event) => this.handleSceneKey(event, true);
+    this.sceneKeyUpHandler = (event) => this.handleSceneKey(event, false);
     this.resizeHandler = () => {
       if (this.state.player && !this.state.battle) {
-        this.renderMap();
+        if (this.isSceneModeActive()) {
+          this.renderSceneCanvas();
+        } else {
+          this.renderMap();
+        }
       }
     };
   }
@@ -115,6 +144,10 @@ export class GameScene {
     this.state.worldmapOpen = false;
     this.state.worldmapFocusRegion = null;
     this.state.activeSliceId = content.defaultSliceId || null;
+    this.state.sceneModeEnabled = false;
+    this.state.scenePlayerPos = null;
+    this.state.sceneSelectedNpcId = null;
+    this.resetSceneInput();
 
     this.scheduler.bootstrap(this.state.time);
     normalizeVitals(this.state.player);
@@ -128,8 +161,10 @@ export class GameScene {
     if (this.worldDataWarnings.length > 0) {
       this.pushLog(`检测到${this.worldDataWarnings.length}条世界数据告警，详见控制台。`, "bad");
     }
+    this.pushLog("可切换场景模式，在指定地点以角色行走方式互动。", "system");
 
     this.bindDomEvents();
+    this.attachSceneKeyListeners();
     this.startAnimationLoop();
     this.render();
     this.autoSave();
@@ -153,6 +188,10 @@ export class GameScene {
     this.state.worldmapOpen = false;
     this.state.worldmapFocusRegion = null;
     this.state.activeSliceId = snapshot.activeSliceId || content.defaultSliceId || null;
+    this.state.sceneModeEnabled = Boolean(snapshot.ui && snapshot.ui.sceneModeEnabled);
+    this.state.scenePlayerPos = null;
+    this.state.sceneSelectedNpcId = null;
+    this.resetSceneInput();
 
     this.scheduler.bootstrap(this.state.time);
     if (snapshot.schedulerState) {
@@ -162,9 +201,11 @@ export class GameScene {
     }
 
     normalizeVitals(this.state.player);
+    this.syncSceneStateForLocation();
     this.pushLog("旧档已载入，江湖依旧。", "system");
 
     this.bindDomEvents();
+    this.attachSceneKeyListeners();
     this.startAnimationLoop();
     this.render();
     return true;
@@ -179,6 +220,10 @@ export class GameScene {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
+    this.lastFrameTime = 0;
+    this.resetSceneInput();
+    window.removeEventListener("keydown", this.sceneKeyDownHandler);
+    window.removeEventListener("keyup", this.sceneKeyUpHandler);
   }
 
   getSerializableState() {
@@ -194,7 +239,10 @@ export class GameScene {
       currentEvent: this.state.currentEvent,
       lastBattle: this.state.lastBattle,
       schedulerState: this.scheduler.serialize(),
-      activeSliceId: this.state.activeSliceId
+      activeSliceId: this.state.activeSliceId,
+      ui: {
+        sceneModeEnabled: Boolean(this.state.sceneModeEnabled)
+      }
     };
   }
 
@@ -240,6 +288,10 @@ export class GameScene {
       this.autoSave(true);
     });
 
+    this.dom.btnSceneMode.addEventListener("click", () => {
+      this.toggleSceneMode();
+    });
+
     this.dom.menuToggle.addEventListener("click", () => {
       this.state.menuOpen = !this.state.menuOpen;
       this.renderMenu();
@@ -276,6 +328,10 @@ export class GameScene {
       if (event.target === this.dom.sheetModal) {
         this.closeSheet();
       }
+    });
+
+    this.dom.exploreCanvas.addEventListener("click", (event) => {
+      this.handleSceneCanvasClick(event);
     });
 
     window.addEventListener("resize", this.resizeHandler);
@@ -319,8 +375,35 @@ export class GameScene {
       return;
     }
 
+    if (action === "scene-select-npc") {
+      this.state.sceneSelectedNpcId = data.npcId || null;
+      this.renderContextActions();
+      this.renderSceneCanvas();
+      return;
+    }
+
+    if (action === "scene-observe-poi") {
+      this.observeScenePoi(data.poiId);
+      return;
+    }
+
     if (action === "talk") {
       this.talkToNpc(data.npcId);
+      return;
+    }
+
+    if (action === "learn-npc-skill") {
+      this.learnFromNpc(data.npcId);
+      return;
+    }
+
+    if (action === "steal-npc-item") {
+      this.stealFromNpc(data.npcId);
+      return;
+    }
+
+    if (action === "challenge-npc") {
+      this.challengeNpc(data.npcId);
       return;
     }
 
@@ -423,21 +506,22 @@ export class GameScene {
       .map((skill) => {
         const level = player.skills.owned[skill.id];
         const bonus = computeSkillBonuses(skill, level);
+        const trainCost = getSkillTrainCost(skill, level);
         return [
           `<div class="skill-row">`,
           `<div>`,
           `<strong>${skill.name}</strong> <span class="small">[${slotLabels[skill.slot]} | ${skill.quality}]</span><br/>`,
           `<span class="small">${skill.description}</span><br/>`,
-          `<span class="small">等级 ${level} · 攻${bonus.attack} 命${bonus.hit} 闪${bonus.dodge} 格${bonus.block}</span>`,
+          `<span class="small">等级 ${level} · 攻${bonus.attack} 命${bonus.hit} 闪${bonus.dodge} 格${bonus.block} 拆${bonus.parry} 破${bonus.break} 暴${bonus.crit} 速${bonus.speed}</span>`,
           `</div>`,
-          `<div><button class="skill-btn" data-action="train-skill" data-skill-id="${skill.id}">研习(12潜能)</button></div>`,
+          `<div><button class="skill-btn" data-action="train-skill" data-skill-id="${skill.id}">研习(${trainCost}潜能)</button></div>`,
           `</div>`
         ].join("");
       })
       .join("");
 
     this.dom.sheetContent.innerHTML = [
-      `<div class="sheet-section"><div class="small">武学等级会实质改变命中、伤害、闪避与格挡。</div></div>`,
+      `<div class="sheet-section"><div class="small">武学等级将同时影响攻防、拆招、破招、暴击与身法节奏。</div></div>`,
       rows || `<div class="small">暂无武学</div>`
     ].join("");
   }
@@ -502,6 +586,7 @@ export class GameScene {
     const direction = getDirection(fromNode.id, toNode.id);
 
     player.location = nodeId;
+    this.syncSceneStateForLocation();
     this.clearInvalidCurrentEvent({
       logIfCleared: true,
       reason: "你离开事发之地，原先的际遇已散。"
@@ -555,6 +640,88 @@ export class GameScene {
 
     this.advanceClock(10);
     this.render();
+  }
+
+  learnFromNpc(npcId) {
+    if (this.state.battle) {
+      this.pushLog("战斗中无暇请教。", "bad");
+      return;
+    }
+
+    const here = this.scheduler.getNpcsAt(this.state.player.location);
+    const npc = here.find((item) => item.id === npcId);
+    if (!npc) {
+      this.pushLog("此地未见此人。", "bad");
+      return;
+    }
+
+    const result = attemptLearnFromNpc({
+      npc,
+      state: this.state,
+      adjustNpcRelation: (id, delta) => this.adjustNpcRelation(id, delta, { log: false }),
+      adjustFactionReputation: (id, delta) => this.adjustFactionReputation(id, delta, { log: false })
+    });
+
+    for (const line of result.logs) {
+      this.pushLog(line, result.ok ? "good" : "bad");
+    }
+
+    if (result.ok) {
+      this.advanceClock(25);
+    }
+    this.render();
+  }
+
+  stealFromNpc(npcId) {
+    if (this.state.battle) {
+      this.pushLog("战斗中无法行窃。", "bad");
+      return;
+    }
+
+    const here = this.scheduler.getNpcsAt(this.state.player.location);
+    const npc = here.find((item) => item.id === npcId);
+    if (!npc) {
+      this.pushLog("此地未见此人。", "bad");
+      return;
+    }
+
+    const result = attemptStealFromNpc({
+      npc,
+      state: this.state,
+      adjustNpcRelation: (id, delta) => this.adjustNpcRelation(id, delta, { log: false }),
+      adjustFactionReputation: (id, delta) => this.adjustFactionReputation(id, delta, { log: false })
+    });
+
+    for (const line of result.logs) {
+      this.pushLog(line, result.ok ? "system" : "bad");
+    }
+
+    this.advanceClock(10);
+    this.render();
+  }
+
+  challengeNpc(npcId) {
+    if (this.state.battle) {
+      this.pushLog("先解决眼前战斗。", "bad");
+      return;
+    }
+
+    const here = this.scheduler.getNpcsAt(this.state.player.location);
+    const npc = here.find((item) => item.id === npcId);
+    if (!npc) {
+      this.pushLog("此地未见此人。", "bad");
+      return;
+    }
+
+    const challenge = buildNpcChallengeConfig({ npc });
+    if (!challenge.ok) {
+      this.pushLog(challenge.message || "对方无意出手。", "bad");
+      this.render();
+      return;
+    }
+
+    this.pushLog(`你向${npc.name}提出切磋。`, "system");
+    this.startBattle(challenge.battleConfig);
   }
 
   tryTriggerEvent(force) {
@@ -649,7 +816,7 @@ export class GameScene {
   }
 
   startBattle(battleConfig) {
-    const enemy = enemies[battleConfig.enemyId];
+    const enemy = resolveBattleTarget({ battleConfig, enemies });
     if (!enemy) {
       this.pushLog("战斗对象不存在。", "bad");
       return;
@@ -692,6 +859,7 @@ export class GameScene {
     }
 
     this.state.player.hp = battle.player.hp;
+    this.state.player.qi = battle.player.qi;
     normalizeVitals(this.state.player);
     this.advanceClock(10, { passive: true });
 
@@ -876,10 +1044,11 @@ export class GameScene {
       `<span class="badge">${player.name}</span>`,
       `<span class="badge">${player.alignment}</span>`,
       `<span class="badge">境界${player.level}</span>`,
-      `血 ${player.hp}/${derived.maxHp} · 气 ${player.qi}/${derived.maxQi} · 银 ${player.gold} · 经 ${player.exp}/${getExpToNext(player.level)} · 潜 ${player.potential} · 根 ${player.stats.bone} 身 ${player.stats.agility} 悟 ${player.stats.insight}`
+      `血 ${player.hp}/${derived.maxHp} · 气 ${player.qi}/${derived.maxQi} · 银 ${player.gold} · 经 ${player.exp}/${getExpToNext(player.level)} · 潜 ${player.potential} · 根 ${player.stats.bone} 身 ${player.stats.agility} 悟 ${player.stats.insight} · 拆 ${derived.parry} 破 ${derived.break} 暴 ${derived.crit}`
     ].join(" | ");
 
     this.dom.timeSummary.textContent = `${formatGameTime(this.state.time)} · ${location ? location.name : "未知地点"}`;
+    this.renderSceneModeButton();
   }
 
   renderPanels() {
@@ -888,16 +1057,26 @@ export class GameScene {
     this.dom.battlePanel.classList.toggle("hidden", !inBattle);
 
     if (inBattle) {
+      this.dom.mapWrapper.classList.remove("scene-mode");
+      this.dom.mapWrapper.dataset.sceneTheme = "";
+      this.setSceneHud({ visible: false });
       this.renderBattlePanel();
       this.renderBattleContextActions();
       return;
     }
 
-    this.renderMap();
+    if (this.isSceneModeActive()) {
+      this.renderScenePanel();
+    } else {
+      this.renderMap();
+    }
     this.renderContextActions();
   }
 
   renderMap() {
+    this.dom.mapWrapper.classList.remove("scene-mode");
+    this.dom.mapWrapper.dataset.sceneTheme = "";
+    this.setSceneHud({ visible: false });
     const player = this.state.player;
     const neighbors = getAdjacentNodeIds(player.location);
     const currentNode = getNodeById(player.location);
@@ -905,7 +1084,7 @@ export class GameScene {
       return;
     }
     const currentRegion = getNodeRegion(currentNode.id);
-    this.applyRegionBackdrop(currentRegion);
+    this.applyRegionBackdrop(currentNode, currentRegion);
     const visibleNodeIds = this.collectVisibleNodes(player.location, 2);
     const centers = {};
 
@@ -976,11 +1155,84 @@ export class GameScene {
     ].join("");
   }
 
-  applyRegionBackdrop(region) {
+  renderScenePanel() {
+    const player = this.state.player;
+    const currentNode = getNodeById(player.location);
+    if (!currentNode) {
+      return;
+    }
+    const currentRegion = getNodeRegion(currentNode.id);
+    this.applyRegionBackdrop(currentNode, currentRegion);
+    this.dom.mapWrapper.classList.add("scene-mode");
+
+    const scene = this.getActiveNodeScene();
+    if (!scene) {
+      this.renderMap();
+      return;
+    }
+    const sceneTheme = getSceneTheme(scene.themeId);
+    this.dom.mapWrapper.dataset.sceneTheme = normalizeSceneThemeId(scene.themeId);
+
+    if (!this.state.scenePlayerPos) {
+      this.state.scenePlayerPos = { ...scene.spawn };
+    }
+
+    const sceneNpcs = this.getSceneNpcs(scene);
+    const npcText = sceneNpcs.length ? sceneNpcs.map((item) => item.name).join("、") : "此刻无人停留。";
+    const exitsText = (scene.exits || []).map((item) => item.label).join("、");
+    this.dom.mapInfo.innerHTML = [
+      `${currentNode.name}（场景模式 / ${currentRegion ? currentRegion.name : "无名区域"}）`,
+      `<br/>${currentNode.description}`,
+      `<br/>${sceneTheme.mood}`,
+      `<br/>在场人物：${npcText}`,
+      `<br/>出口：${exitsText || "无"} · 方向键移动，点击人物/观察点/出口。`
+    ].join("");
+    this.setSceneHud({
+      visible: true,
+      title: `${currentNode.name} · ${sceneTheme.name}`,
+      hint: sceneTheme.hudHint
+    });
+
+    this.renderSceneCanvas(scene, sceneNpcs);
+  }
+
+  renderSceneCanvas(scene = this.getActiveNodeScene(), sceneNpcs = null) {
+    if (!scene || !this.dom.exploreCanvas) {
+      return;
+    }
+
+    if (this.dom.exploreCanvas.width !== scene.size.width) {
+      this.dom.exploreCanvas.width = scene.size.width;
+    }
+    if (this.dom.exploreCanvas.height !== scene.size.height) {
+      this.dom.exploreCanvas.height = scene.size.height;
+    }
+
+    if (!this.state.scenePlayerPos) {
+      this.state.scenePlayerPos = { ...scene.spawn };
+    }
+    this.state.scenePlayerPos = this.clampScenePoint(scene, this.state.scenePlayerPos);
+
+    const npcs = sceneNpcs || this.getSceneNpcs(scene);
+    if (this.state.sceneSelectedNpcId && !npcs.some((npc) => npc.id === this.state.sceneSelectedNpcId)) {
+      this.state.sceneSelectedNpcId = null;
+    }
+
+    drawExploreScene(this.dom.exploreCanvas, {
+      scene,
+      playerPos: this.state.scenePlayerPos,
+      player: this.state.player,
+      npcs,
+      selectedNpcId: this.state.sceneSelectedNpcId,
+      now: performance.now()
+    });
+  }
+
+  applyRegionBackdrop(node, region) {
     if (!this.dom.mapWrapper) {
       return;
     }
-    const backdrop = region && region.mapBackdrop ? region.mapBackdrop : null;
+    const backdrop = (node && node.sceneBackdrop) || (region && region.mapBackdrop) || null;
 
     this.dom.mapWrapper.style.setProperty(
       "--map-region-image",
@@ -999,6 +1251,7 @@ export class GameScene {
       backdrop && backdrop.size ? backdrop.size : "cover"
     );
     this.dom.mapWrapper.dataset.regionId = region ? region.id : "";
+    this.dom.mapWrapper.dataset.nodeId = node ? node.id : "";
   }
 
   collectVisibleNodes(centerId, maxDepth = 2) {
@@ -1053,6 +1306,7 @@ export class GameScene {
   }
 
   renderContextActions() {
+    this.dom.contextActions.classList.remove("scene-context");
     const player = this.state.player;
     const location = player.location;
     const neighbors = getAdjacentNodeIds(location);
@@ -1080,6 +1334,11 @@ export class GameScene {
       }
     }
 
+    if (this.isSceneModeActive()) {
+      this.renderSceneContextActions();
+      return;
+    }
+
     const moveButtons = neighbors
       .map((id) => {
         const dir = getDirection(location, id);
@@ -1094,7 +1353,18 @@ export class GameScene {
         : npcsHere
             .map((npc) => {
               const state = this.scheduler.getNpcState(npc.id);
-              return `<button class="secondary-btn" data-action="talk" data-npc-id="${npc.id}">与${npc.name}交谈（${state ? state.action : ""}）</button>`;
+              const actions = [`<button class="secondary-btn" data-action="talk" data-npc-id="${npc.id}">与${npc.name}交谈（${state ? state.action : ""}）</button>`];
+              const options = getNpcInteractionOptions({ npc, player });
+              if (options.canLearn) {
+                actions.push(`<button class="secondary-btn" data-action="learn-npc-skill" data-npc-id="${npc.id}">向${npc.name}请教</button>`);
+              }
+              if (options.canSteal) {
+                actions.push(`<button class="secondary-btn" data-action="steal-npc-item" data-npc-id="${npc.id}">顺手牵羊·${npc.name}</button>`);
+              }
+              if (options.canChallenge) {
+                actions.push(`<button class="secondary-btn" data-action="challenge-npc" data-npc-id="${npc.id}">切磋·${npc.name}</button>`);
+              }
+              return actions.join("");
             })
             .join("");
 
@@ -1114,7 +1384,61 @@ export class GameScene {
     ].join("");
   }
 
+  renderSceneContextActions() {
+    this.dom.contextActions.classList.add("scene-context");
+    const scene = this.getActiveNodeScene();
+    if (!scene) {
+      this.dom.contextActions.innerHTML = `<span class="small">当前地点暂无场景化数据。</span>`;
+      return;
+    }
+
+    const sceneNpcs = this.getSceneNpcs(scene);
+    const selectedNpc = sceneNpcs.find((item) => item.id === this.state.sceneSelectedNpcId) || null;
+    const poiButtons = (scene.pois || [])
+      .map(
+        (poi) =>
+          `<button class="secondary-btn" data-action="scene-observe-poi" data-poi-id="${poi.id}">观察·${poi.label}</button>`
+      )
+      .join("");
+
+    if (!selectedNpc) {
+      const npcList = sceneNpcs
+        .map((npc) => `<button class="secondary-btn" data-action="scene-select-npc" data-npc-id="${npc.id}">查看·${npc.name}</button>`)
+        .join("");
+      this.dom.contextActions.innerHTML = [
+        `<strong class="scene-context-head">场景互动</strong><br/>`,
+        `<span class="small">方向键移动，点击人物或下方按钮可切换目标。</span>`,
+        `<div class="inline-row scene-context-row">${npcList || `<span class="small">此地暂无可交互人物。</span>`}</div>`,
+        `<div class="inline-row scene-context-row">${poiButtons || ""}</div>`
+      ].join("");
+      return;
+    }
+
+    const schedulerState = this.scheduler.getNpcState(selectedNpc.id);
+    const options = getNpcInteractionOptions({ npc: selectedNpc, player: this.state.player });
+    const actions = [
+      `<button class="secondary-btn" data-action="talk" data-npc-id="${selectedNpc.id}">与${selectedNpc.name}交谈（${schedulerState ? schedulerState.action : "驻留"}）</button>`
+    ];
+    if (options.canLearn) {
+      actions.push(`<button class="secondary-btn" data-action="learn-npc-skill" data-npc-id="${selectedNpc.id}">向${selectedNpc.name}请教</button>`);
+    }
+    if (options.canSteal) {
+      actions.push(`<button class="secondary-btn" data-action="steal-npc-item" data-npc-id="${selectedNpc.id}">顺手牵羊·${selectedNpc.name}</button>`);
+    }
+    if (options.canChallenge) {
+      actions.push(`<button class="secondary-btn" data-action="challenge-npc" data-npc-id="${selectedNpc.id}">切磋·${selectedNpc.name}</button>`);
+    }
+
+    this.dom.contextActions.innerHTML = [
+      `<strong class="scene-context-head">当前目标：${selectedNpc.name}</strong><br/>`,
+      `<span class="small">点击出口可离开本场景。人物互动耗时沿用江湖规则。</span>`,
+      `<div class="inline-row scene-context-row">${actions.join("")}</div>`,
+      `<div class="inline-row scene-context-row">${poiButtons || ""}</div>`
+    ].join("");
+  }
+
   renderBattleContextActions() {
+    this.dom.contextActions.classList.remove("scene-context");
     this.dom.contextActions.innerHTML = [
       `<strong>战斗中</strong><br/>`,
       `<span class="small">当前为自动回合，请观察战报与招式演出。</span>`
@@ -1136,8 +1460,8 @@ export class GameScene {
     ].join("");
 
     this.dom.battleHpBars.innerHTML = [
-      `<div class="hp"><strong>${battle.player.name}</strong><div>${battle.player.hp}/${battle.player.maxHp}</div><div class="bar"><span style="width:${playerHpPct}%"></span></div></div>`,
-      `<div class="hp enemy"><strong>${battle.enemy.name}</strong><div>${battle.enemy.hp}/${battle.enemy.maxHp}</div><div class="bar"><span style="width:${enemyHpPct}%"></span></div></div>`
+      `<div class="hp"><strong>${battle.player.name}</strong><div>${battle.player.hp}/${battle.player.maxHp} · 气${battle.player.qi}/${battle.player.maxQi}</div><div class="bar"><span style="width:${playerHpPct}%"></span></div></div>`,
+      `<div class="hp enemy"><strong>${battle.enemy.name}</strong><div>${battle.enemy.hp}/${battle.enemy.maxHp} · 气${battle.enemy.qi}/${battle.enemy.maxQi}</div><div class="bar"><span style="width:${enemyHpPct}%"></span></div></div>`
     ].join("");
 
     drawBattleCanvas(this.dom.battleCanvas, battle);
@@ -1148,7 +1472,14 @@ export class GameScene {
       return;
     }
 
-    const loop = () => {
+    const loop = (now) => {
+      const delta = this.lastFrameTime > 0 ? Math.min(64, now - this.lastFrameTime) : 16;
+      this.lastFrameTime = now;
+
+      if (this.isSceneModeActive()) {
+        this.stepSceneMovement(delta);
+      }
+
       if (this.state.battle && !this.dom.battlePanel.classList.contains("hidden")) {
         drawBattleCanvas(this.dom.battleCanvas, this.state.battle);
       }
@@ -1156,6 +1487,276 @@ export class GameScene {
     };
 
     this.rafId = requestAnimationFrame(loop);
+  }
+
+  renderSceneModeButton() {
+    if (!this.dom.btnSceneMode) {
+      return;
+    }
+    this.dom.btnSceneMode.textContent = `场景模式: ${this.state.sceneModeEnabled ? "开" : "关"}`;
+    this.dom.btnSceneMode.classList.toggle("active", this.state.sceneModeEnabled);
+  }
+
+  setSceneHud({ visible, title = "", hint = "" }) {
+    if (!this.dom.sceneHud || !this.dom.sceneHudTitle || !this.dom.sceneHudHint) {
+      return;
+    }
+    this.dom.sceneHud.classList.toggle("hidden", !visible);
+    if (!visible) {
+      return;
+    }
+    this.dom.sceneHudTitle.textContent = title;
+    this.dom.sceneHudHint.textContent = hint;
+  }
+
+  attachSceneKeyListeners() {
+    window.removeEventListener("keydown", this.sceneKeyDownHandler);
+    window.removeEventListener("keyup", this.sceneKeyUpHandler);
+    window.addEventListener("keydown", this.sceneKeyDownHandler);
+    window.addEventListener("keyup", this.sceneKeyUpHandler);
+  }
+
+  resetSceneInput() {
+    this.state.sceneInput.up = false;
+    this.state.sceneInput.down = false;
+    this.state.sceneInput.left = false;
+    this.state.sceneInput.right = false;
+  }
+
+  toggleSceneMode() {
+    if (!this.state.player) {
+      return;
+    }
+    if (this.state.battle) {
+      this.pushLog("战斗中无法切换场景模式。", "bad");
+      return;
+    }
+
+    this.state.sceneModeEnabled = !this.state.sceneModeEnabled;
+    this.syncSceneStateForLocation();
+
+    if (this.state.sceneModeEnabled) {
+      if (hasNodeScene(this.state.player.location)) {
+        this.pushLog("已开启场景模式。可用方向键移动并点击人物互动。", "system");
+      } else {
+        this.pushLog("已开启场景模式。当前地点暂无场景数据，仍使用地图模式。", "system");
+      }
+    } else {
+      this.pushLog("已关闭场景模式。", "system");
+    }
+
+    this.render();
+  }
+
+  syncSceneStateForLocation() {
+    if (!this.state.player || !this.state.sceneModeEnabled) {
+      this.state.scenePlayerPos = null;
+      this.state.sceneSelectedNpcId = null;
+      this.resetSceneInput();
+      return;
+    }
+
+    const scene = getNodeSceneById(this.state.player.location);
+    if (!scene) {
+      this.state.scenePlayerPos = null;
+      this.state.sceneSelectedNpcId = null;
+      this.resetSceneInput();
+      return;
+    }
+
+    this.state.scenePlayerPos = this.clampScenePoint(scene, { ...scene.spawn });
+    this.state.sceneSelectedNpcId = null;
+    this.resetSceneInput();
+  }
+
+  isSceneModeActive() {
+    return Boolean(this.getActiveNodeScene()) && !this.state.battle;
+  }
+
+  getActiveNodeScene() {
+    if (!this.state.player || !this.state.sceneModeEnabled) {
+      return null;
+    }
+    return getNodeSceneById(this.state.player.location);
+  }
+
+  handleSceneKey(event, pressed) {
+    const keyMap = {
+      ArrowUp: "up",
+      ArrowDown: "down",
+      ArrowLeft: "left",
+      ArrowRight: "right"
+    };
+    const inputKey = keyMap[event.key];
+    if (!inputKey) {
+      return;
+    }
+
+    if (!this.isSceneModeActive()) {
+      if (!pressed) {
+        this.state.sceneInput[inputKey] = false;
+      }
+      return;
+    }
+
+    event.preventDefault();
+    this.state.sceneInput[inputKey] = pressed;
+  }
+
+  stepSceneMovement(deltaMs) {
+    const scene = this.getActiveNodeScene();
+    if (!scene || !this.state.scenePlayerPos) {
+      return;
+    }
+
+    const moveX = (this.state.sceneInput.right ? 1 : 0) - (this.state.sceneInput.left ? 1 : 0);
+    const moveY = (this.state.sceneInput.down ? 1 : 0) - (this.state.sceneInput.up ? 1 : 0);
+    if (moveX === 0 && moveY === 0) {
+      return;
+    }
+
+    const length = Math.hypot(moveX, moveY) || 1;
+    const distance = (SCENE_MOVE_SPEED * deltaMs) / 1000;
+    const target = {
+      x: this.state.scenePlayerPos.x + (moveX / length) * distance,
+      y: this.state.scenePlayerPos.y + (moveY / length) * distance
+    };
+
+    const next = this.resolveSceneMove(scene, this.state.scenePlayerPos, target);
+    if (next.x !== this.state.scenePlayerPos.x || next.y !== this.state.scenePlayerPos.y) {
+      this.state.scenePlayerPos = next;
+      this.renderSceneCanvas(scene);
+    }
+  }
+
+  resolveSceneMove(scene, start, target) {
+    const attempt = this.clampScenePoint(scene, target);
+    if (!this.isSceneBlocked(scene, attempt)) {
+      return attempt;
+    }
+
+    const xOnly = this.clampScenePoint(scene, { x: attempt.x, y: start.y });
+    const yOnly = this.clampScenePoint(scene, { x: start.x, y: attempt.y });
+    const canX = !this.isSceneBlocked(scene, xOnly);
+    const canY = !this.isSceneBlocked(scene, yOnly);
+
+    if (canX && canY) {
+      const dx = Math.abs(xOnly.x - start.x);
+      const dy = Math.abs(yOnly.y - start.y);
+      return dx >= dy ? xOnly : yOnly;
+    }
+    if (canX) {
+      return xOnly;
+    }
+    if (canY) {
+      return yOnly;
+    }
+    return start;
+  }
+
+  clampScenePoint(scene, point, radius = SCENE_PLAYER_RADIUS) {
+    return {
+      x: clamp(point.x, radius, scene.size.width - radius),
+      y: clamp(point.y, radius, scene.size.height - radius)
+    };
+  }
+
+  isSceneBlocked(scene, point, radius = SCENE_PLAYER_RADIUS) {
+    for (const obstacle of scene.obstacles || []) {
+      if (
+        point.x + radius > obstacle.x &&
+        point.x - radius < obstacle.x + obstacle.width &&
+        point.y + radius > obstacle.y &&
+        point.y - radius < obstacle.y + obstacle.height
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  getSceneNpcs(scene) {
+    if (!scene || !this.state.player) {
+      return [];
+    }
+    const anchors = scene.npcAnchors || {};
+    return this.scheduler
+      .getNpcsAt(this.state.player.location)
+      .map((npc) => {
+        const anchor = anchors[npc.id];
+        if (!anchor) {
+          return null;
+        }
+        return {
+          ...npc,
+          position: { x: anchor.x, y: anchor.y }
+        };
+      })
+      .filter(Boolean);
+  }
+
+  handleSceneCanvasClick(event) {
+    const scene = this.getActiveNodeScene();
+    if (!scene || !this.dom.exploreCanvas) {
+      return;
+    }
+
+    const rect = this.dom.exploreCanvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      return;
+    }
+    const x = ((event.clientX - rect.left) / rect.width) * scene.size.width;
+    const y = ((event.clientY - rect.top) / rect.height) * scene.size.height;
+
+    const sceneNpcs = this.getSceneNpcs(scene);
+    const npcHit = sceneNpcs.find((npc) => distance(npc.position, { x, y }) <= 28);
+    if (npcHit) {
+      this.state.sceneSelectedNpcId = npcHit.id;
+      this.renderContextActions();
+      this.renderSceneCanvas(scene, sceneNpcs);
+      return;
+    }
+
+    const poiHit = (scene.pois || []).find((poi) => {
+      const radius = Number.isFinite(poi.radius) ? poi.radius : 26;
+      return distance({ x: poi.x, y: poi.y }, { x, y }) <= radius;
+    });
+    if (poiHit) {
+      this.observeScenePoi(poiHit.id);
+      return;
+    }
+
+    const exitHit = (scene.exits || []).find(
+      (exit) => x >= exit.x && x <= exit.x + exit.width && y >= exit.y && y <= exit.y + exit.height
+    );
+    if (exitHit) {
+      this.travelTo(exitHit.toNodeId);
+      return;
+    }
+
+    if (this.state.sceneSelectedNpcId) {
+      this.state.sceneSelectedNpcId = null;
+      this.renderContextActions();
+      this.renderSceneCanvas(scene, sceneNpcs);
+    }
+  }
+
+  observeScenePoi(poiId) {
+    const scene = this.getActiveNodeScene();
+    if (!scene) {
+      return;
+    }
+    const poi = (scene.pois || []).find((item) => item.id === poiId);
+    if (!poi) {
+      return;
+    }
+
+    const minutes = Number.isFinite(poi.timeCost) && poi.timeCost > 0 ? Math.round(poi.timeCost) : 5;
+    const text = poi.logText || `你观察了${poi.label || "场景细节"}。`;
+    this.state.sceneSelectedNpcId = null;
+    this.pushLog(text, "system");
+    this.advanceClock(minutes);
+    this.render();
   }
 
   renderMenu() {
@@ -1279,4 +1880,12 @@ export class GameScene {
     }
     return key;
   }
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function distance(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }

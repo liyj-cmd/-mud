@@ -1,0 +1,28 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4f5f79" />
+      <stop offset="100%" stop-color="#1a2435" />
+    </linearGradient>
+    <linearGradient id="ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2f3c2d" />
+      <stop offset="100%" stop-color="#172218" />
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)" />
+  <rect y="520" width="1600" height="380" fill="url(#ground)" />
+  <path d="M220 520L320 330L450 520Z" fill="#2a3242" />
+  <path d="M1140 520L1260 300L1390 520Z" fill="#2a3242" />
+  <rect x="560" y="350" width="480" height="260" rx="8" fill="#4a3029" />
+  <rect x="600" y="300" width="400" height="90" rx="6" fill="#5c3b2f" />
+  <rect x="635" y="390" width="70" height="220" fill="#6e4938" />
+  <rect x="895" y="390" width="70" height="220" fill="#6e4938" />
+  <rect x="725" y="450" width="150" height="160" fill="#2b1f1a" />
+  <circle cx="800" cy="450" r="16" fill="#d9c28d" opacity="0.75" />
+  <rect x="130" y="520" width="1340" height="45" fill="#1f2a1f" />
+  <g opacity="0.3" fill="#d8c89a">
+    <rect x="170" y="570" width="30" height="160" />
+    <rect x="1400" y="560" width="28" height="170" />
+    <rect x="1280" y="585" width="24" height="145" />
+  </g>
+</svg>

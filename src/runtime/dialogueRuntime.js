@@ -1,4 +1,6 @@
 import { ensurePlayerState } from "../systems/progression.js";
+import { getMartialById, slotLabels } from "../data/martialArts.js";
+import { getNpcMartialLoadout } from "../data/npcMartialLoadouts.js";
 
 export function createDialogueRuntime({ eventDefs }) {
   const specialEvents = {
@@ -18,6 +20,27 @@ export function createDialogueRuntime({ eventDefs }) {
       if (!player.knownNpcs.includes(npc.id)) {
         player.knownNpcs.push(npc.id);
         logs.push(`你记住了${npc.name}的名号。`);
+      }
+
+      const loadout = getNpcMartialLoadout(npc.id);
+      if (loadout) {
+        const discoveryFlag = `martial_profile_seen_${npc.id}`;
+        if (!player.flags[discoveryFlag]) {
+          const summary = Object.entries(loadout.slots)
+            .map(([slot, skillId]) => {
+              const skill = getMartialById(skillId);
+              if (!skill) {
+                return null;
+              }
+              return `${slotLabels[slot]}:${skill.name}`;
+            })
+            .filter(Boolean)
+            .join("，");
+          if (summary.length > 0) {
+            logs.push(`你看出${npc.name}的武学路数（${loadout.realm}）：${summary}。`);
+          }
+          player.flags[discoveryFlag] = true;
+        }
       }
 
       if (npc.affinityOnTalk && adjustNpcRelation) {

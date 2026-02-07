@@ -9,6 +9,7 @@ import { applyEffectPack } from "../src/systems/effectApplier.js";
 import { createDialogueRuntime } from "../src/runtime/dialogueRuntime.js";
 import { createQuestRuntime } from "../src/runtime/questRuntime.js";
 import { getAdjacentNodeIds } from "../src/data/map.js";
+import { resolveBattleTarget } from "../src/systems/battleActorFactory.js";
 
 const args = parseArgs(process.argv.slice(2));
 const runs = args.runs ?? 50;
@@ -175,7 +176,7 @@ function tryTalk(state, scheduler, dialogueRuntime, eventSystem) {
 }
 
 function simulateBattle({ player, battleConfig, enemies, questRuntime, time }) {
-  const enemy = enemies[battleConfig.enemyId];
+  const enemy = resolveBattleTarget({ battleConfig, enemies });
   if (!enemy) {
     return null;
   }
@@ -196,6 +197,7 @@ function simulateBattle({ player, battleConfig, enemies, questRuntime, time }) {
   }
 
   player.hp = battle.player.hp;
+  player.qi = battle.player.qi;
   normalizeVitals(player);
 
   if (battle.winner === "player") {
