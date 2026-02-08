@@ -198,3 +198,67 @@
   - 场景内 NPC 仍依赖固定锚点，未实现“动态避障 + 局部巡逻”。
 - 下个 AI 的第一步建议
   - 先做浏览器手工验收路径：`town_gate -> market`、`kaifeng_west_road -> kaifeng_square`、`shaolin_gate -> monk_courtyard`，确认三主题渲染、人物建模差异和交互热区无回归，再决定是否拆分 `exploreCanvas`。
+
+## 本轮追加（2026-02-07 / 回合8）
+- 做了什么
+  - 新增场景背景乐系统：
+    - 新增 `src/data/ambientMusicProfiles.js`，以数据驱动方式定义 `jianghu_roam` / `market_bustle` / `magistrate_watch` / `temple_zen` 四套音乐配置。
+    - 新增 `src/systems/ambientAudio.js`，使用 Web Audio 实现程序生成背景乐、主题切换淡入淡出、浏览器解锁与静音控制。
+  - `GameScene` 接入背景乐路由：
+    - 根据 `sceneThemes[*].musicProfileId`（场景模式）与区域兜底映射（地图模式）自动切换背景乐。
+    - 顶部新增 `背景乐` 开关按钮，支持 `开/关/待激活/不支持` 状态显示。
+    - 存档快照 `ui` 新增 `musicMuted` 字段，兼容旧档缺省值。
+  - 场景主题配置新增 `musicProfileId` 字段，并在 `worldValidation` 增加音乐配置引用合法性检查。
+  - 更新 `docs/WORLD_DATA_SCHEMA.md` 与 `CHANGELOG.md`，补充背景乐 schema 与变更记录。
+- 校验结果
+  - `./scripts/ai_preflight.sh`：通过，`scene-ok` / `warnings 0`。
+  - `node scripts/simulate_world.mjs --runs 20 --steps 200 --seed 20260207`：执行成功（`events=1022 battles=107 wins=107 losses=0`）。
+- 剩余风险
+  - 当前 BGM 为程序生成音色，风格可用但仍偏抽象；若追求更强辨识度，后续可引入授权音频素材并保留当前系统做兜底。
+  - `GameScene` 继续增大，后续建议把“音乐路由 + 主题切换”拆到独立 UI/Audio 协调层。
+- 下个 AI 的第一步建议
+  - 先做浏览器手工验收：切换 `market` / `kaifeng_square` / `monk_courtyard`，确认音乐随场地切换且静音开关、读档状态恢复正常。
+
+## 本轮追加（2026-02-08 / 回合9）
+- 做了什么
+  - 完成“可替换美术包 + 场景主画面优先 UI”一期落地：
+    - `exploreCanvas` 改为策略路由，原手绘渲染迁移到 `src/ui/exploreRenderers/proceduralRenderer.js`。
+    - 新增 `src/ui/exploreRenderers/spriteRenderer.js`，支持本地素材包叠加渲染，并在单元素缺图时回退内置手绘结果。
+  - 新增素材包体系：
+    - 新增 `src/data/artPacks.js`，提供 `DEFAULT_ART_PACK_ID`、`listArtPacks()`、`getArtPack()`、`resolveArtPack()`。
+    - 新增 `src/systems/sceneAssetLoader.js`，实现图片缓存与预热。
+    - 新增演示包 `src/assets/artpacks/wuxia-demo/`（场景背景、角色 token、道具与 UI 占位素材）。
+  - 场景数据补齐视觉语义键：
+    - `src/data/nodeScenes.js` 为 `market` / `kaifeng_square` / `monk_courtyard` 的障碍、出口、POI 新增 `visualKey`。
+  - UI 重排：
+    - `index.html` / `src/styles.css` 改为“主舞台 + 左下江湖册 + 右下耳报浮层”。
+    - 顶部不再展示完整人物长条信息；人物状态整合进江湖册（含美术包选择器）。
+    - `GameScene` 新增 `renderJianghuBook()`、`renderLogOverlay()`，日志浮层自动淡出，完整历史保留在江湖册内。
+  - 存档与校验：
+    - `GameScene` 存档 `ui` 新增 `selectedArtPackId`，旧档缺失字段自动回退 `procedural`。
+    - `worldValidation` 新增 `artPacks` 与 `visualKey` 字段检查。
+  - 文档同步：
+    - 更新 `docs/WORLD_DATA_SCHEMA.md`（`artPacks`、`visualKey`、`save.ui.selectedArtPackId`）。
+    - 更新 `CHANGELOG.md`。
+- 校验结果
+  - `./scripts/ai_preflight.sh`：通过，`scene-ok` / `warnings 0`。
+  - `node scripts/simulate_world.mjs --runs 20 --steps 200 --seed 20260207`：执行成功（`events=1022 battles=107 wins=107 losses=0`）。
+- 剩余风险
+  - `GameScene` 仍然偏大，UI 编排与交互路由尚未拆分到独立 `UIRouter`。
+  - `wuxia_pack_demo` 当前为演示占位包，后续接入正式素材包时需补充许可证与素材分辨率策略。
+  - 战斗胜率仍偏高（模拟 107 战全胜），数值平衡问题仍未进入本轮处理范围。
+- 下个 AI 的第一步建议
+  - 先做浏览器手工验收（桌面 + 移动宽度）：验证江湖册折叠、耳报浮层淡出、素材包切换即时生效与三场景视觉差异，再决定是否继续拆 `GameScene` 的 UI 路由层。
+
+## 本轮追加（2026-02-08 / 回合10）
+- 做了什么
+  - 按用户反馈修正“江湖录”默认打开行为：
+    - `GameScene.state.menuOpen` 初始值改为 `false`。
+    - `startNewGame()` 与 `loadFromSnapshot()` 统一改为默认收起江湖录。
+  - 保留既有强制展开规则：战斗中或有事件待选择时仍会自动展开江湖录，避免交互入口丢失。
+- 校验结果
+  - `./scripts/ai_preflight.sh`：通过，`scene-ok` / `warnings 0`。
+- 剩余风险
+  - 当前“江湖录是否展开”仍不写入存档，读档后固定为收起；若后续希望记忆玩家偏好，需要把该 UI 状态并入 `save.ui`。
+- 下个 AI 的第一步建议
+  - 先做一次浏览器手工确认：新开局、读档、触发事件、进入战斗四条路径下江湖录展开/收起是否符合预期。

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#5f7967" />
+      <stop offset="100%" stop-color="#31463a" />
+    </linearGradient>
+  </defs>
+  <rect width="960" height="540" fill="url(#sky)" />
+  <rect x="0" y="180" width="960" height="146" fill="#506149" fill-opacity="0.75" />
+  <rect x="0" y="326" width="960" height="214" fill="#7b8564" fill-opacity="0.72" />
+  <g fill="#4f5e46" fill-opacity="0.84">
+    <rect x="86" y="116" width="226" height="88" />
+    <rect x="334" y="98" width="306" height="104" />
+    <rect x="674" y="112" width="206" height="92" />
+  </g>
+  <text x="30" y="46" fill="#eef4d4" font-size="28" font-family="serif">少林禅院 · 美术包</text>
+</svg>

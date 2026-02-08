@@ -48,11 +48,24 @@ import { drawBattleCanvas } from "../ui/battleCanvas.js";
 import { getNodeSceneById, hasNodeScene } from "../data/nodeScenes.js";
 import { drawExploreScene } from "../ui/exploreCanvas.js";
 import { getSceneTheme, normalizeSceneThemeId } from "../data/sceneThemes.js";
+import { createAmbientAudioDirector } from "../systems/ambientAudio.js";
+import { DEFAULT_ART_PACK_ID, listArtPacks, resolveArtPack } from "../data/artPacks.js";
+import { createSceneAssetLoader } from "../systems/sceneAssetLoader.js";
 
 const AUTO_SAVE_EVERY_TICKS = 6;
 const MAP_DEFAULT_OVERLAY = "radial-gradient(circle at 50% 35%, rgba(44, 58, 82, 0.08), rgba(8, 12, 18, 0.24) 72%)";
 const SCENE_MOVE_SPEED = 200;
 const SCENE_PLAYER_RADIUS = 12;
+const LOG_OVERLAY_WINDOW_MS = 28000;
+const LOG_OVERLAY_MAX_ITEMS = 8;
+const REGION_MUSIC_PROFILE_BY_ID = {
+  changan: "market_bustle",
+  kaifeng: "magistrate_watch",
+  shaolin: "temple_zen",
+  wudang: "temple_zen",
+  emei: "temple_zen",
+  suzhou: "market_bustle"
+};
 const content = getRuntimeContent();
 const { npcs, events, enemies } = content;
 
@@ -76,6 +89,8 @@ export class GameScene {
       worldmapFocusRegion: null,
       activeSliceId: content.defaultSliceId || null,
       sceneModeEnabled: false,
+      musicMuted: false,
+      selectedArtPackId: DEFAULT_ART_PACK_ID,
       scenePlayerPos: null,
       sceneSelectedNpcId: null,
       sceneInput: {
@@ -115,6 +130,20 @@ export class GameScene {
     this.didBind = false;
     this.rafId = null;
     this.lastFrameTime = 0;
+    this.artPackOptions = listArtPacks();
+    this.sceneAssetLoader = createSceneAssetLoader({
+      onAssetReady: () => {
+        if (this.isSceneModeActive()) {
+          this.renderSceneCanvas();
+        }
+      }
+    });
+    this.ambientAudio = createAmbientAudioDirector({
+      onStateChange: () => this.renderMusicButton()
+    });
+    this.ambientUnlockHandler = () => {
+      this.tryUnlockAmbientAudio();
+    };
     this.sceneKeyDownHandler = (event) => this.handleSceneKey(event, true);
     this.sceneKeyUpHandler = (event) => this.handleSceneKey(event, false);
     this.resizeHandler = () => {
@@ -145,6 +174,8 @@ export class GameScene {
     this.state.worldmapFocusRegion = null;
     this.state.activeSliceId = content.defaultSliceId || null;
     this.state.sceneModeEnabled = false;
+    this.state.musicMuted = false;
+    this.state.selectedArtPackId = DEFAULT_ART_PACK_ID;
     this.state.scenePlayerPos = null;
     this.state.sceneSelectedNpcId = null;
     this.resetSceneInput();
@@ -165,8 +196,10 @@ export class GameScene {
 
     this.bindDomEvents();
     this.attachSceneKeyListeners();
+    this.attachAmbientUnlockListeners();
     this.startAnimationLoop();
     this.render();
+    this.tryUnlockAmbientAudio();
     this.autoSave();
   }
 
@@ -178,7 +211,7 @@ export class GameScene {
     this.state.player = this.worldState.restorePlayer(snapshot.player);
     this.state.time = this.worldState.normalizeTime(snapshot.time);
     this.state.eventHistory = snapshot.eventHistory || {};
-    this.state.logs = snapshot.logs || [];
+    this.state.logs = normalizeLogEntries(snapshot.logs);
     this.state.currentEvent = snapshot.currentEvent || null;
     this.state.battle = null;
     this.state.lastBattle = snapshot.lastBattle || null;
@@ -189,6 +222,8 @@ export class GameScene {
     this.state.worldmapFocusRegion = null;
     this.state.activeSliceId = snapshot.activeSliceId || content.defaultSliceId || null;
     this.state.sceneModeEnabled = Boolean(snapshot.ui && snapshot.ui.sceneModeEnabled);
+    this.state.musicMuted = Boolean(snapshot.ui && snapshot.ui.musicMuted);
+    this.state.selectedArtPackId = resolveArtPack(snapshot.ui && snapshot.ui.selectedArtPackId).id;
     this.state.scenePlayerPos = null;
     this.state.sceneSelectedNpcId = null;
     this.resetSceneInput();
@@ -206,8 +241,10 @@ export class GameScene {
 
     this.bindDomEvents();
     this.attachSceneKeyListeners();
+    this.attachAmbientUnlockListeners();
     this.startAnimationLoop();
     this.render();
+    this.tryUnlockAmbientAudio();
     return true;
   }
 
@@ -222,6 +259,8 @@ export class GameScene {
     }
     this.lastFrameTime = 0;
     this.resetSceneInput();
+    this.detachAmbientUnlockListeners();
+    this.ambientAudio.stop();
     window.removeEventListener("keydown", this.sceneKeyDownHandler);
     window.removeEventListener("keyup", this.sceneKeyUpHandler);
   }
@@ -241,7 +280,9 @@ export class GameScene {
       schedulerState: this.scheduler.serialize(),
       activeSliceId: this.state.activeSliceId,
       ui: {
-        sceneModeEnabled: Boolean(this.state.sceneModeEnabled)
+        sceneModeEnabled: Boolean(this.state.sceneModeEnabled),
+        musicMuted: Boolean(this.state.musicMuted),
+        selectedArtPackId: this.state.selectedArtPackId
       }
     };
   }
@@ -291,6 +332,18 @@ export class GameScene {
     this.dom.btnSceneMode.addEventListener("click", () => {
       this.toggleSceneMode();
     });
+
+    if (this.dom.btnMusic) {
+      this.dom.btnMusic.addEventListener("click", () => {
+        this.toggleMusicMuted();
+      });
+    }
+
+    if (this.dom.artPackSelect) {
+      this.dom.artPackSelect.addEventListener("change", () => {
+        this.handleArtPackChange(this.dom.artPackSelect.value);
+      });
+    }
 
     this.dom.menuToggle.addEventListener("click", () => {
       this.state.menuOpen = !this.state.menuOpen;
@@ -449,7 +502,7 @@ export class GameScene {
 
   openSheet(type) {
     if (this.state.battle) {
-      this.pushLog("战斗中无法翻阅江湖册。", "bad");
+      this.pushLog("战斗中无法翻阅江湖录。", "bad");
       return;
     }
 
@@ -998,10 +1051,13 @@ export class GameScene {
 
   pushLog(message, type = "system") {
     const label = formatGameTime(this.state.time);
+    const createdAt = Date.now();
     this.state.logs.push({
+      id: `${createdAt}-${this.state.logs.length}`,
       time: label,
       message,
-      type
+      type,
+      createdAt
     });
 
     if (this.state.logs.length > 250) {
@@ -1028,33 +1084,106 @@ export class GameScene {
 
     this.renderTopBar();
     this.renderPanels();
+    this.renderJianghuBook();
     this.renderLogs();
+    this.renderLogOverlay();
     this.renderMenu();
     this.renderSheet();
     this.renderWorldmap();
+    this.syncAmbientMusic();
   }
 
   renderTopBar() {
     const player = this.state.player;
+    const location = getNodeById(player.location);
+    const pack = resolveArtPack(this.state.selectedArtPackId);
+
+    if (this.dom.topStatus) {
+      this.dom.topStatus.textContent = `${player.name} · ${player.alignment} · 素材:${pack.name}`;
+    }
+    this.dom.timeSummary.textContent = `${formatGameTime(this.state.time)} · ${location ? location.name : "未知地点"}`;
+    this.renderSceneModeButton();
+    this.renderMusicButton();
+  }
+
+  renderJianghuBook() {
+    if (!this.state.player || !this.dom.bookSummary) {
+      return;
+    }
+
+    const player = this.state.player;
     const derived = computeDerivedStats(player);
     normalizeVitals(player);
     const location = getNodeById(player.location);
+    const prepared = listPreparedSkills(player);
+    const preparedText = Object.keys(prepared)
+      .map((slot) => {
+        const item = prepared[slot];
+        const name = item && item.skill ? item.skill.name : "未备";
+        const level = item ? item.level : 0;
+        return `${slotLabels[slot]} ${name}(${level})`;
+      })
+      .join(" / ");
 
-    this.dom.playerSummary.innerHTML = [
-      `<span class="badge">${player.name}</span>`,
-      `<span class="badge">${player.alignment}</span>`,
-      `<span class="badge">境界${player.level}</span>`,
-      `血 ${player.hp}/${derived.maxHp} · 气 ${player.qi}/${derived.maxQi} · 银 ${player.gold} · 经 ${player.exp}/${getExpToNext(player.level)} · 潜 ${player.potential} · 根 ${player.stats.bone} 身 ${player.stats.agility} 悟 ${player.stats.insight} · 拆 ${derived.parry} 破 ${derived.break} 暴 ${derived.crit}`
-    ].join(" | ");
+    this.dom.bookSummary.innerHTML = [
+      `<div class="book-badges"><span class="badge">${player.name}</span><span class="badge">${player.alignment}</span><span class="badge">境界${player.level}</span></div>`,
+      `<div class="small">时辰：${formatGameTime(this.state.time)} · 地点：${location ? location.name : "未知"}</div>`,
+      `<div class="small">血 ${player.hp}/${derived.maxHp} · 气 ${player.qi}/${derived.maxQi} · 银 ${player.gold} · 经 ${player.exp}/${getExpToNext(player.level)} · 潜 ${player.potential}</div>`,
+      `<div class="small">根 ${player.stats.bone} 身 ${player.stats.agility} 悟 ${player.stats.insight} · 拆 ${derived.parry} 破 ${derived.break} 暴 ${derived.crit}</div>`,
+      `<div class="small">当前武学：${preparedText}</div>`
+    ].join("");
 
-    this.dom.timeSummary.textContent = `${formatGameTime(this.state.time)} · ${location ? location.name : "未知地点"}`;
-    this.renderSceneModeButton();
+    this.renderArtPackSelector();
+  }
+
+  renderArtPackSelector() {
+    if (!this.dom.artPackSelect) {
+      return;
+    }
+
+    const currentIds = Array.from(this.dom.artPackSelect.options || []).map((item) => item.value);
+    const optionIds = this.artPackOptions.map((item) => item.id);
+    const needRebuild =
+      currentIds.length !== optionIds.length ||
+      currentIds.some((id, index) => id !== optionIds[index]);
+
+    if (needRebuild) {
+      this.dom.artPackSelect.innerHTML = this.artPackOptions
+        .map((pack) => `<option value="${pack.id}">${pack.name}</option>`)
+        .join("");
+    }
+
+    this.dom.artPackSelect.value = this.state.selectedArtPackId;
+  }
+
+  handleArtPackChange(packId) {
+    if (!this.state.player) {
+      return;
+    }
+
+    const nextPackId = resolveArtPack(packId).id;
+    if (nextPackId === this.state.selectedArtPackId) {
+      return;
+    }
+
+    this.state.selectedArtPackId = nextPackId;
+    const pack = resolveArtPack(nextPackId);
+    this.pushLog(`已切换美术包：${pack.name}。缺失素材将回退为内置绘制。`, "system");
+    if (this.isSceneModeActive()) {
+      this.renderSceneCanvas();
+    }
+    this.render();
+    this.autoSave();
   }
 
   renderPanels() {
     const inBattle = Boolean(this.state.battle);
     this.dom.explorePanel.classList.toggle("hidden", inBattle);
     this.dom.battlePanel.classList.toggle("hidden", !inBattle);
+    if (this.dom.app) {
+      this.dom.app.classList.toggle("scene-dominant", this.isSceneModeActive() && !inBattle);
+      this.dom.app.classList.toggle("battle-mode", inBattle);
+    }
 
     if (inBattle) {
       this.dom.mapWrapper.classList.remove("scene-mode");
@@ -1224,7 +1353,9 @@ export class GameScene {
       player: this.state.player,
       npcs,
       selectedNpcId: this.state.sceneSelectedNpcId,
-      now: performance.now()
+      now: performance.now(),
+      artPackId: this.state.selectedArtPackId,
+      assetLoader: this.sceneAssetLoader
     });
   }
 
@@ -1497,6 +1628,30 @@ export class GameScene {
     this.dom.btnSceneMode.classList.toggle("active", this.state.sceneModeEnabled);
   }
 
+  renderMusicButton() {
+    if (!this.dom.btnMusic) {
+      return;
+    }
+
+    const audioState = this.ambientAudio.getState();
+    if (!audioState.supported) {
+      this.dom.btnMusic.disabled = true;
+      this.dom.btnMusic.textContent = "背景乐: 不支持";
+      this.dom.btnMusic.classList.remove("active");
+      this.dom.btnMusic.classList.add("muted");
+      return;
+    }
+
+    const waitingUnlock = !this.state.musicMuted && !audioState.ready;
+    this.dom.btnMusic.disabled = false;
+    this.dom.btnMusic.textContent = waitingUnlock
+      ? "背景乐: 待激活"
+      : `背景乐: ${this.state.musicMuted ? "关" : "开"}`;
+    this.dom.btnMusic.classList.toggle("active", !this.state.musicMuted && audioState.ready);
+    this.dom.btnMusic.classList.toggle("muted", this.state.musicMuted || waitingUnlock);
+    this.dom.btnMusic.title = audioState.profileName || "";
+  }
+
   setSceneHud({ visible, title = "", hint = "" }) {
     if (!this.dom.sceneHud || !this.dom.sceneHudTitle || !this.dom.sceneHudHint) {
       return;
@@ -1514,6 +1669,18 @@ export class GameScene {
     window.removeEventListener("keyup", this.sceneKeyUpHandler);
     window.addEventListener("keydown", this.sceneKeyDownHandler);
     window.addEventListener("keyup", this.sceneKeyUpHandler);
+  }
+
+  attachAmbientUnlockListeners() {
+    window.removeEventListener("pointerdown", this.ambientUnlockHandler);
+    window.removeEventListener("keydown", this.ambientUnlockHandler);
+    window.addEventListener("pointerdown", this.ambientUnlockHandler, { passive: true });
+    window.addEventListener("keydown", this.ambientUnlockHandler);
+  }
+
+  detachAmbientUnlockListeners() {
+    window.removeEventListener("pointerdown", this.ambientUnlockHandler);
+    window.removeEventListener("keydown", this.ambientUnlockHandler);
   }
 
   resetSceneInput() {
@@ -1546,6 +1713,73 @@ export class GameScene {
     }
 
     this.render();
+  }
+
+  toggleMusicMuted() {
+    if (!this.state.player) {
+      return;
+    }
+
+    this.state.musicMuted = !this.state.musicMuted;
+    if (!this.state.musicMuted) {
+      this.pushLog("背景乐已开启。若仍无声，请先点按一次页面。", "system");
+      this.tryUnlockAmbientAudio();
+    } else {
+      this.pushLog("背景乐已关闭。", "system");
+    }
+
+    this.syncAmbientMusic();
+    this.renderMusicButton();
+    this.autoSave();
+  }
+
+  resolveAmbientMusicProfileId() {
+    if (!this.state.player) {
+      return getSceneTheme().musicProfileId;
+    }
+
+    const scene = this.getActiveNodeScene();
+    if (scene) {
+      const theme = getSceneTheme(scene.themeId);
+      if (theme.musicProfileId) {
+        return theme.musicProfileId;
+      }
+    }
+
+    const currentNode = getNodeById(this.state.player.location);
+    const region = currentNode ? getNodeRegion(currentNode.id) : null;
+    if (region && REGION_MUSIC_PROFILE_BY_ID[region.id]) {
+      return REGION_MUSIC_PROFILE_BY_ID[region.id];
+    }
+
+    return getSceneTheme().musicProfileId;
+  }
+
+  syncAmbientMusic() {
+    if (!this.state.player) {
+      return;
+    }
+
+    this.ambientAudio.setMuted(this.state.musicMuted);
+    this.ambientAudio.setProfile(this.resolveAmbientMusicProfileId());
+  }
+
+  async tryUnlockAmbientAudio() {
+    if (!this.state.player || this.state.musicMuted) {
+      return false;
+    }
+
+    try {
+      const unlocked = await this.ambientAudio.unlock();
+      if (unlocked) {
+        this.detachAmbientUnlockListeners();
+        this.syncAmbientMusic();
+        this.renderMusicButton();
+      }
+      return unlocked;
+    } catch {
+      return false;
+    }
   }
 
   syncSceneStateForLocation() {
@@ -1760,8 +1994,15 @@ export class GameScene {
   }
 
   renderMenu() {
-    this.dom.baseActions.classList.toggle("hidden", !this.state.menuOpen);
-    this.dom.menuToggle.textContent = this.state.menuOpen ? "收起" : "江湖册";
+    const forcedOpen = Boolean(this.state.currentEvent || this.state.battle);
+    const isOpen = forcedOpen || this.state.menuOpen;
+    if (this.dom.bookContent) {
+      this.dom.bookContent.classList.toggle("hidden", !isOpen);
+    }
+    if (this.dom.jianghuBook) {
+      this.dom.jianghuBook.classList.toggle("expanded", isOpen);
+    }
+    this.dom.menuToggle.textContent = isOpen ? "收起江湖录" : "江湖录";
   }
 
   renderWorldmap() {
@@ -1833,6 +2074,10 @@ export class GameScene {
   }
 
   renderLogs() {
+    if (!this.dom.logList) {
+      return;
+    }
+
     const html = this.state.logs
       .slice(-150)
       .map((item) => {
@@ -1843,6 +2088,28 @@ export class GameScene {
 
     this.dom.logList.innerHTML = html;
     this.dom.logList.scrollTop = this.dom.logList.scrollHeight;
+  }
+
+  renderLogOverlay() {
+    if (!this.dom.logOverlayList) {
+      return;
+    }
+
+    const now = Date.now();
+    const visible = this.state.logs
+      .slice(-LOG_OVERLAY_MAX_ITEMS)
+      .filter((item) => !item.createdAt || now - item.createdAt <= LOG_OVERLAY_WINDOW_MS)
+      .map((item, index, list) => {
+        const age = item.createdAt ? now - item.createdAt : 0;
+        const fade = item.createdAt
+          ? clamp(1 - age / LOG_OVERLAY_WINDOW_MS, 0.16, 1)
+          : clamp(0.72 - (list.length - index - 1) * 0.08, 0.2, 0.75);
+        const className = item.type ? `log-${item.type}` : "";
+        return `<div class=\"overlay-log-item ${className}\" style=\"opacity:${fade.toFixed(2)}\"><span class=\"log-time\">[${item.time}]</span> ${item.message}</div>`;
+      })
+      .join("");
+
+    this.dom.logOverlayList.innerHTML = visible || `<div class=\"overlay-log-item small\">暂无新消息</div>`;
   }
 
   adjustNpcRelation(npcId, delta, { log = true } = {}) {
@@ -1888,4 +2155,27 @@ function clamp(value, min, max) {
 
 function distance(a, b) {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function normalizeLogEntries(rawLogs) {
+  if (!Array.isArray(rawLogs)) {
+    return [];
+  }
+
+  const now = Date.now();
+  const baseStep = 1200;
+  return rawLogs
+    .filter((item) => item && typeof item.message === "string")
+    .map((item, index) => {
+      const createdAt = Number.isFinite(item.createdAt)
+        ? item.createdAt
+        : now - (rawLogs.length - index) * baseStep;
+      return {
+        id: typeof item.id === "string" ? item.id : `${createdAt}-${index}`,
+        time: typeof item.time === "string" ? item.time : "",
+        message: item.message,
+        type: typeof item.type === "string" ? item.type : "system",
+        createdAt
+      };
+    });
 }

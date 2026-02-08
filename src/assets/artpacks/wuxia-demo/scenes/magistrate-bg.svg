@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#5e6f84" />
+      <stop offset="100%" stop-color="#314050" />
+    </linearGradient>
+  </defs>
+  <rect width="960" height="540" fill="url(#sky)" />
+  <rect x="0" y="176" width="960" height="148" fill="#5f6f86" fill-opacity="0.75" />
+  <rect x="0" y="324" width="960" height="216" fill="#8193ab" fill-opacity="0.72" />
+  <g fill="#3c4b61" fill-opacity="0.82">
+    <rect x="80" y="122" width="228" height="82" />
+    <rect x="336" y="102" width="302" height="100" />
+    <rect x="674" y="120" width="208" height="84" />
+  </g>
+  <text x="30" y="46" fill="#e5f0ff" font-size="28" font-family="serif">汴梁公廨 · 美术包</text>
+</svg>

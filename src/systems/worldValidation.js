@@ -8,7 +8,9 @@ import { getFactionById } from "../data/factions.js";
 import { npcMartialLoadoutOverrides, getNpcMartialLoadout, martialSlotOrder } from "../data/npcMartialLoadouts.js";
 import { npcInteractionProfiles, getNpcInteractionProfile } from "../data/npcInteractionProfiles.js";
 import { getItemById } from "../data/items.js";
-import { isSceneThemeId } from "../data/sceneThemes.js";
+import { sceneThemes, isSceneThemeId, getSceneTheme } from "../data/sceneThemes.js";
+import { isAmbientMusicProfileId } from "../data/ambientMusicProfiles.js";
+import { listArtPacks } from "../data/artPacks.js";
 import {
   factionCharacterModelProfiles,
   npcCharacterModelOverrides,
@@ -20,6 +22,8 @@ export function validateWorldData() {
   const warnings = [];
 
   validateMap(warnings);
+  validateSceneThemes(warnings);
+  validateArtPacks(warnings);
   validateNodeScenes(warnings);
   validateNpc(warnings);
   validateNpcMartialLoadouts(warnings);
@@ -29,6 +33,86 @@ export function validateWorldData() {
   validateEnemies(warnings);
 
   return warnings;
+}
+
+function validateArtPacks(warnings) {
+  const packs = listArtPacks();
+  if (!Array.isArray(packs) || packs.length === 0) {
+    warnings.push("artPacks 不能为空");
+    return;
+  }
+
+  const packIds = new Set();
+  for (const pack of packs) {
+    if (!pack || typeof pack !== "object") {
+      warnings.push("artPacks 存在非法项");
+      continue;
+    }
+
+    if (!isNonEmptyString(pack.id)) {
+      warnings.push("artPack 缺少 id");
+      continue;
+    }
+    if (packIds.has(pack.id)) {
+      warnings.push(`重复 artPack：${pack.id}`);
+    }
+    packIds.add(pack.id);
+
+    if (!isNonEmptyString(pack.name)) {
+      warnings.push(`artPack ${pack.id} 缺少 name`);
+    }
+    if (!isNonEmptyString(pack.version)) {
+      warnings.push(`artPack ${pack.id} 缺少 version`);
+    }
+    if (!isNonEmptyString(pack.license)) {
+      warnings.push(`artPack ${pack.id} 缺少 license`);
+    }
+    if (!isNonEmptyString(pack.source)) {
+      warnings.push(`artPack ${pack.id} 缺少 source`);
+    }
+
+    if (!pack.themes || typeof pack.themes !== "object") {
+      warnings.push(`artPack ${pack.id} 缺少 themes`);
+      continue;
+    }
+
+    for (const [themeId, themeConfig] of Object.entries(pack.themes)) {
+      if (!themeConfig || typeof themeConfig !== "object") {
+        warnings.push(`artPack ${pack.id}/${themeId} 配置非法`);
+        continue;
+      }
+
+      if (themeId !== "default" && !isSceneThemeId(themeId)) {
+        warnings.push(`artPack ${pack.id} 引用未知 sceneTheme：${themeId}`);
+      }
+
+      if (themeConfig.renderer !== "procedural" && themeConfig.renderer !== "sprite") {
+        warnings.push(`artPack ${pack.id}/${themeId} renderer 非法：${themeConfig.renderer}`);
+      }
+    }
+  }
+}
+
+function validateSceneThemes(warnings) {
+  for (const theme of Object.values(sceneThemes)) {
+    if (!theme || !isNonEmptyString(theme.id)) {
+      warnings.push("sceneThemes 存在非法主题项");
+      continue;
+    }
+
+    if (!isNonEmptyString(theme.name)) {
+      warnings.push(`sceneTheme ${theme.id} 缺少 name`);
+    }
+    if (!isNonEmptyString(theme.mood)) {
+      warnings.push(`sceneTheme ${theme.id} 缺少 mood`);
+    }
+    if (!isNonEmptyString(theme.hudHint)) {
+      warnings.push(`sceneTheme ${theme.id} 缺少 hudHint`);
+    }
+    if (theme.musicProfileId !== undefined && !isAmbientMusicProfileId(theme.musicProfileId)) {
+      warnings.push(`sceneTheme ${theme.id} musicProfileId 非法：${theme.musicProfileId}`);
+    }
+  }
 }
 
 function validateNodeScenes(warnings) {
@@ -61,6 +145,11 @@ function validateNodeScenes(warnings) {
 
     if (scene.themeId !== undefined && !isSceneThemeId(scene.themeId)) {
       warnings.push(`nodeScene ${scene.nodeId} themeId 非法：${scene.themeId}`);
+    } else {
+      const theme = getSceneTheme(scene.themeId);
+      if (theme.musicProfileId !== undefined && !isAmbientMusicProfileId(theme.musicProfileId)) {
+        warnings.push(`nodeScene ${scene.nodeId} 对应主题 musicProfileId 非法：${theme.musicProfileId}`);
+      }
     }
 
     if (!scene.size || !Number.isFinite(scene.size.width) || !Number.isFinite(scene.size.height)) {
@@ -88,6 +177,9 @@ function validateNodeScenes(warnings) {
         if (!inSceneRectBounds(obstacle, scene.size)) {
           warnings.push(`nodeScene ${scene.nodeId} 障碍物越界：${obstacle.id || "unknown"}`);
         }
+        if (obstacle.visualKey !== undefined && !isNonEmptyString(obstacle.visualKey)) {
+          warnings.push(`nodeScene ${scene.nodeId} obstacle.visualKey 非法：${obstacle.id || "unknown"}`);
+        }
       }
     }
 
@@ -106,6 +198,9 @@ function validateNodeScenes(warnings) {
         }
         if (!inSceneRectBounds(exit, scene.size)) {
           warnings.push(`nodeScene ${scene.nodeId} 出口越界：${exit.id || exit.toNodeId}`);
+        }
+        if (exit.visualKey !== undefined && !isNonEmptyString(exit.visualKey)) {
+          warnings.push(`nodeScene ${scene.nodeId} exit.visualKey 非法：${exit.id || exit.toNodeId}`);
         }
       }
     }
@@ -145,6 +240,9 @@ function validateNodeScenes(warnings) {
           }
           if (poi.timeCost !== undefined && (!Number.isFinite(poi.timeCost) || poi.timeCost <= 0)) {
             warnings.push(`nodeScene ${scene.nodeId} poi.timeCost 非法：${poi.id}`);
+          }
+          if (poi.visualKey !== undefined && !isNonEmptyString(poi.visualKey)) {
+            warnings.push(`nodeScene ${scene.nodeId} poi.visualKey 非法：${poi.id}`);
           }
         }
       }

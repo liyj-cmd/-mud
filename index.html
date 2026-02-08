@@ -9,58 +9,68 @@
   <body>
     <div id="app">
       <header id="top-bar">
-        <div class="status-left" id="player-summary"></div>
+        <div class="status-left" id="top-status">武林纪行</div>
         <div class="status-center" id="time-summary"></div>
         <div class="status-right">
           <button id="btn-scene-mode" class="ghost-btn">场景模式: 关</button>
+          <button id="btn-music" class="ghost-btn">背景乐: 待激活</button>
           <button id="btn-save" class="ghost-btn">手动存档</button>
           <button id="btn-new-game" class="ghost-btn">新开一局</button>
         </div>
       </header>
 
       <main id="gameplay">
-        <div id="stage-column">
-          <section id="explore-panel" class="panel">
-            <div class="panel-title">江湖地图</div>
-            <div id="map-wrapper">
-              <canvas id="explore-canvas" width="960" height="540"></canvas>
-              <div id="scene-hud" class="scene-hud hidden">
-                <div id="scene-hud-title" class="scene-hud-title"></div>
-                <div id="scene-hud-hint" class="scene-hud-hint"></div>
-              </div>
-              <button id="btn-worldmap" class="ghost-btn map-corner-btn">小地图总览</button>
-              <svg id="map-lines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
-              <div id="map-nodes"></div>
-              <div id="menu-hub">
-                <button id="menu-toggle" class="ghost-btn">江湖册</button>
-                <div id="base-actions" class="menu-actions hidden">
+        <section id="explore-panel" class="panel">
+          <div id="map-wrapper">
+            <canvas id="explore-canvas" width="960" height="540"></canvas>
+            <div id="scene-hud" class="scene-hud hidden">
+              <div id="scene-hud-title" class="scene-hud-title"></div>
+              <div id="scene-hud-hint" class="scene-hud-hint"></div>
+            </div>
+            <button id="btn-worldmap" class="ghost-btn map-corner-btn">小地图总览</button>
+            <svg id="map-lines" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+            <div id="map-nodes"></div>
+
+            <div id="map-info" class="map-info-overlay"></div>
+
+            <section id="jianghu-book" class="hud-card">
+              <button id="menu-toggle" class="ghost-btn">江湖录</button>
+              <div id="book-content" class="book-content hidden">
+                <div id="book-summary" class="book-summary"></div>
+                <label class="book-field" for="artpack-select">
+                  美术包
+                  <select id="artpack-select"></select>
+                </label>
+                <div id="base-actions" class="menu-actions">
                   <button class="action-btn" data-action="search">探查周遭</button>
                   <button class="action-btn" data-action="rest">打坐调息</button>
                   <button class="action-btn" data-action="open-skills">武学列表</button>
                   <button class="action-btn" data-action="open-prepare">准备武功</button>
                   <button class="action-btn" data-action="manual-save">立即存档</button>
                 </div>
+                <div id="context-actions"></div>
+                <div class="book-log-title">江湖记闻</div>
+                <div id="log-list"></div>
               </div>
-            </div>
-            <div id="map-info"></div>
-          </section>
+            </section>
 
-          <section id="battle-panel" class="panel hidden">
-            <div class="panel-title">战斗画面</div>
-            <div id="battle-status" class="block"></div>
-            <div class="hp-bars" id="battle-hp-bars"></div>
-            <div class="battle-canvas-wrap">
-              <canvas id="battle-canvas" width="860" height="290"></canvas>
-            </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
-        <aside id="side-panel" class="panel">
-          <div class="panel-title">江湖文字</div>
-          <div id="context-actions"></div>
-          <div id="log-list"></div>
-        </aside>
+        <section id="battle-panel" class="panel hidden">
+          <div class="panel-title">战斗画面</div>
+          <div id="battle-status" class="block"></div>
+          <div class="hp-bars" id="battle-hp-bars"></div>
+          <div class="battle-canvas-wrap">
+            <canvas id="battle-canvas" width="860" height="290"></canvas>
+          </div>
+        </section>
       </main>
+
+      <section id="log-overlay" class="hud-card">
+        <div id="log-overlay-title">江湖耳报</div>
+        <div id="log-overlay-list"></div>
+      </section>
     </div>
 
     <div id="sheet-modal" class="modal">

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 96">
+  <rect x="6" y="6" width="108" height="84" rx="10" fill="#5b3726" fill-opacity="0.8" stroke="#f3d2a2" stroke-width="3" />
+  <text x="60" y="42" text-anchor="middle" fill="#ffe4b0" font-size="22" font-family="serif">江湖</text>
+  <text x="60" y="68" text-anchor="middle" fill="#ffe4b0" font-size="18" font-family="serif">册</text>
+</svg>

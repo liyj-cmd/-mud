@@ -45,13 +45,16 @@
 - `size.width`, `size.height`：逻辑画布尺寸
 - `spawn`：主角进入场景时的初始位置（`x`, `y`）
 - `obstacles[]`：矩形阻挡体（`id`, `x`, `y`, `width`, `height`）
+  - `visualKey`（可选）：场景美术语义键（例如 `stall.weapon`），供素材包渲染器读取
 - `exits[]`：矩形出口区域
   - `id`, `label`
   - `toNodeId`：点击后前往的地点 ID
   - `x`, `y`, `width`, `height`
+  - `visualKey`（可选）：出口语义键（例如 `exit.city_gate`）
 - `npcAnchors`：NPC 场景锚点（键为 `npcId`，值为 `{ x, y }`）
 - `pois[]`（可选）：观察点
   - `id`, `label`, `x`, `y`
+  - `visualKey`（可选）：观察点语义键（例如 `poi.notice_board`）
   - `radius`（可选）
   - `timeCost`（可选，默认 5 分钟）
   - `logText`（可选）
@@ -65,8 +68,37 @@
   - `id`, `name`
   - `mood`：场景介绍文案（用于地图信息面板）
   - `hudHint`：场景 HUD 操作提示
+  - `musicProfileId`（可选）：场景背景乐配置 ID（见 `src/data/ambientMusicProfiles.js`）
 - `normalizeSceneThemeId(themeId)`：归一化主题 ID，非法值回落到 `default`
 - `getSceneTheme(themeId)`：获取主题配置
+
+## 美术包（`src/data/artPacks.js`）
+- `artPack`
+  - `id`, `name`, `version`, `license`, `source`
+  - `themes[themeId]`
+    - `renderer`：`procedural` 或 `sprite`
+    - `sceneBackground`（可选）
+    - `obstacleSprites` / `exitSprites` / `poiSprites`（可选，键为 `visualKey`）
+  - `characters`（可选）：`playerToken` / `npcToken` / `selectedRing`
+  - `ui`（可选）：HUD/册子素材与配色信息
+- 接口
+  - `DEFAULT_ART_PACK_ID`
+  - `listArtPacks()`
+  - `getArtPack(packId)`
+  - `resolveArtPack(packId)`：非法值自动回退默认包
+
+## 场景背景乐（`src/data/ambientMusicProfiles.js` + `src/systems/ambientAudio.js`）
+- `ambientMusicProfiles[profileId]`
+  - `id`, `name`
+  - `tempoBpm`：节拍速度
+  - `targetGain`：目标音量（0~1）
+  - `drone[]`（可选）：持续底音层（`freqHz`/`wave`/`gain`/`detuneCents`）
+  - `wind`（可选）：环境噪声层（`gain`/`lowpassHz`/`wobbleHz`/`wobbleDepthHz`）
+  - `pulse`（可选）：节奏层（`wave`/`freqHz`/`stepBeats`/`durationBeats`/`gain`/`pattern[]`）
+  - `lead`（可选）：旋律层（`wave`/`stepBeats`/`durationBeats`/`gain`/`scaleHz[]`/`sequence[]`）
+- `normalizeAmbientMusicProfileId(profileId)`：归一化背景乐 ID，非法值回落到默认
+- `getAmbientMusicProfile(profileId)`：读取背景乐配置
+- 运行时 `createAmbientAudioDirector`：负责自动切曲、淡入淡出、静音开关与浏览器音频解锁
 
 ## 人物建模（`src/data/characterModelProfiles.js` + `src/runtime/characterModelRuntime.js`）
 ### 数据配置
@@ -195,6 +227,11 @@
 - `world.timeline[]`
 - `knownNpcs[]`
 - （运行中）战斗会消费并回写 `hp/qi`，并由派生属性驱动拆招/破招/暴击判定
+
+## UI 状态（`save.ui`）
+- `sceneModeEnabled`
+- `musicMuted`
+- `selectedArtPackId`（可选，缺失时回退到 `DEFAULT_ART_PACK_ID`）
 
 ## 一致性检查
 - 使用 `src/systems/worldValidation.js`

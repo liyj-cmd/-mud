@@ -6,6 +6,20 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- 场景模式 UI 改为“主画面优先”布局：
+  - 去掉固定右侧栏，探索/场景画面占据主舞台。
+  - 江湖文字改为右下淡化浮层（短时耳报），完整日志沉淀到左下江湖册内。
+  - 头部不再承载长条人物属性，角色状态整合到江湖册。
+- `GameScene` 接入“美术包可切换”状态：
+  - 存档 `ui` 新增 `selectedArtPackId`（旧档缺失自动回退 `procedural`）。
+  - 场景渲染 payload 新增 `artPackId` 与 `assetLoader` 上下文，缺素材时单元素自动回退内置绘制。
+- 探索渲染链路改为策略路由：
+  - `src/ui/exploreCanvas.js` 仅负责选择渲染策略与素材预热，不再直接承载全部绘制细节。
+  - 原手绘渲染迁移至 `proceduralRenderer`，新增 `spriteRenderer` 叠加式素材渲染。
+- 三个试点 `nodeScenes` 补充 `visualKey` 语义键（障碍/出口/观察点），渲染层按语义读取素材而非硬编码 `id`。
+- 世界数据校验扩展：
+  - 新增 `artPacks` manifest 合法性检查。
+  - 新增 `nodeScenes[*].obstacles/exits/pois[*].visualKey` 字段合法性检查。
 - 世界数据从“小型原型”扩展为“可持续增长”结构：
   - 地图扩展为 16 个区域、80+ 条连线与 60+ 小地点，并保留旧地点 ID 兼容存档。
   - NPC 扩展到多阵营多关系网络，新增关系种子、阵营归属、任务挂钩与标签字段。
@@ -69,9 +83,27 @@ All notable changes to this project will be documented in this file.
 - 探索画布角色渲染从统一火柴人升级为“人物建模驱动渲染”：
   - NPC 形象按阵营、身份、标签与个体覆写自动生成。
   - 主角形象支持按立场（侠义/诡道）差异化配色与徽记。
+- 新增“场地特色背景乐”系统（Web Audio 程序生成）：
+  - `GameScene` 会按场景主题 / 区域自动切换音乐风格（市井、公廨、禅院、行旅）。
+  - 顶部状态栏新增 `背景乐` 开关，支持浏览器音频解锁前的“待激活”状态提示。
+  - 存档 `ui` 字段新增 `musicMuted`，旧档缺失时默认按未静音处理，保持兼容。
+- 世界数据校验新增背景乐配置合法性检查：
+  - 校验 `sceneThemes[*].musicProfileId` 是否引用存在的音乐配置。
+  - 校验 `nodeScenes[*].themeId` 对应主题的音乐配置是否有效。
+- 江湖录（左下入口）交互回调：
+  - 默认状态从“展开”改回“收起”，避免进入游戏后遮挡主舞台。
+  - 保留事件/战斗期间的强制展开逻辑，确保关键操作不丢失。
 
 ### Added
 
+- 新增本地美术包注册中心 `src/data/artPacks.js`：
+  - 暴露 `DEFAULT_ART_PACK_ID`、`listArtPacks()`、`getArtPack(packId)`、`resolveArtPack(packId)`。
+  - 内置 `procedural` 与 `wuxia_pack_demo` 两套包，支持 license/source 元数据登记。
+- 新增场景素材加载器 `src/systems/sceneAssetLoader.js`（缓存、预热、失败标记）。
+- 新增探索渲染模块拆分：
+  - `src/ui/exploreRenderers/proceduralRenderer.js`
+  - `src/ui/exploreRenderers/spriteRenderer.js`
+- 新增演示素材目录 `src/assets/artpacks/wuxia-demo/`（场景背景、人物 token、道具与 UI 印记占位素材）。
 - 新增项目级 AI 维护约束文件 `AGENTS.md`（定义新 AI 接手顺序与强制动作）。
 - 新增 `docs/` 文档体系（架构、数据字段、剧情总纲、任务规范、分支规范、交接与流程等）。
 - 新增新窗口可直接使用的提示模板 `docs/AI_ONBOARDING_PROMPT.md`。
@@ -127,3 +159,6 @@ All notable changes to this project will be documented in this file.
   - `src/data/characterModelProfiles.js`（人物建模数据配置）
   - `src/runtime/characterModelRuntime.js`（人物模型解析运行时）
   - `src/ui/characterModelRenderer.js`（人物模型画布渲染器）
+- 新增场景背景乐模块：
+  - `src/data/ambientMusicProfiles.js`（背景乐配置）
+  - `src/systems/ambientAudio.js`（Web Audio 淡入淡出与自动切曲）
